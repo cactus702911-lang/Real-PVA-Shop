@@ -1,3 +1,10 @@
 User-agent: *
-Allow: /
+Disallow: /
+Allow: /$
+Allow: /blog/
+Allow: /product/
+Allow: /images/
+Allow: /*.css$
+Allow: /*.js$
+Allow: /favicon.svg
 Sitemap: https://bestpvashop.com/sitemap.xml

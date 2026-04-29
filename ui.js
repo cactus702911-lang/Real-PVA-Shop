@@ -6,14 +6,14 @@ function initUI() {
         blog: 'blog'
     };
 
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn'),
-          mobileMenu = document.getElementById('mobile-menu'),
-          mobileBackdrop = document.getElementById('mobile-menu-backdrop'),
-          menuOpenIcon = document.getElementById('menu-open-icon'),
-          menuCloseIcon = document.getElementById('menu-close-icon'),
-          searchInput = document.getElementById('search-services'),
+    // Use document.querySelectorAll instead of getElementById because multiple buttons might exist
+    // or elements might be generated dynamically
+    const searchInput = document.getElementById('search-services'),
           categorySelect = document.getElementById('category-select'),
           productGrid = document.getElementById('product-grid');
+
+    // Helper function to safely get element
+    const getEl = (id) => document.getElementById(id);
 
     // 2. Filter Products (Optimized)
     function filterProducts() {
@@ -76,6 +76,11 @@ function initUI() {
 
     // 3. Popup & Mobile Menu Logic (Streamlined)
     function closeMobileMenu() {
+        const mobileMenu = getEl('mobile-menu');
+        const mobileBackdrop = getEl('mobile-menu-backdrop');
+        const menuOpenIcon = getEl('menu-open-icon');
+        const menuCloseIcon = getEl('menu-close-icon');
+
         if (!mobileMenu) return;
         mobileMenu.classList.add('hidden');
         mobileMenu.classList.remove('flex');
@@ -86,9 +91,16 @@ function initUI() {
     }
     window.closeMobileMenu = closeMobileMenu;
 
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', () => {
-            if (mobileMenu.classList.contains('hidden')) {
+    // Use event delegation for mobile menu button since it might be re-rendered
+    document.addEventListener('click', (e) => {
+        const mobileMenuBtn = e.target.closest('#mobile-menu-btn');
+        if (mobileMenuBtn) {
+            const mobileMenu = getEl('mobile-menu');
+            const mobileBackdrop = getEl('mobile-menu-backdrop');
+            const menuOpenIcon = getEl('menu-open-icon');
+            const menuCloseIcon = getEl('menu-close-icon');
+
+            if (mobileMenu && mobileMenu.classList.contains('hidden')) {
                 mobileMenu.classList.remove('hidden');
                 mobileMenu.classList.add('flex');
                 if (mobileBackdrop) {
@@ -99,10 +111,10 @@ function initUI() {
                 if (menuCloseIcon) menuCloseIcon.classList.remove('hidden');
                 document.body.classList.add('overflow-hidden');
             } else closeMobileMenu();
-        }, { passive: true });
-    }
-
-    if (mobileBackdrop) mobileBackdrop.addEventListener('click', closeMobileMenu, { passive: true });
+        } else if (e.target.closest('#mobile-menu-backdrop')) {
+            closeMobileMenu();
+        }
+    }, { passive: true });
 
     document.querySelectorAll('.mobile-cat-toggle').forEach(toggle => {
         toggle.addEventListener('click', (e) => {

@@ -348,6 +348,12 @@
                     </div>
 
                     <div class="input-group">
+                        <label class="input-label">🏷️ SEO Tags / Focus Keywords (Backend)</label>
+                        <input type="text" id="edit-prod-seo-tags" class="input-field" placeholder="e.g. buy pva accounts, best pva shop, usa accounts">
+                        <p class="text-[10px] text-slate-500 mt-1">Comma-separated keywords used for backend SEO (meta keywords).</p>
+                    </div>
+
+                    <div class="input-group">
                         <label class="input-label">SEO Meta Description</label>
                         <textarea id="edit-prod-meta" class="input-field h-20"></textarea>
                     </div>
@@ -496,6 +502,12 @@
                     <div class="input-group">
                         <label class="input-label">Excerpt (Meta Description)</label>
                         <textarea id="edit-blog-excerpt" class="input-field h-24"></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">🏷️ SEO Tags / Focus Keywords (Backend)</label>
+                        <input type="text" id="edit-blog-seo-tags" class="input-field" placeholder="e.g. digital marketing, best pva shop, how to grow business">
+                        <p class="text-[10px] text-slate-500 mt-1">Comma-separated keywords used for backend SEO (meta keywords).</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -1117,6 +1129,7 @@
             document.getElementById('edit-prod-sale').value = p.is_sale.toString();
             document.getElementById('edit-prod-slug').value = p.slug;
             document.getElementById('edit-prod-short').value = p.short_description;
+            document.getElementById('edit-prod-seo-tags').value = p.seo_tags || '';
             document.getElementById('edit-prod-meta').value = p.meta_description || '';
             document.getElementById('edit-prod-features').value = (p.features || []).join('\n');
             document.getElementById('edit-prod-pricing').value = (p.pricing || []).join('\n');
@@ -1166,6 +1179,7 @@
             p.is_sale = document.getElementById('edit-prod-sale').value === 'true';
             p.slug = document.getElementById('edit-prod-slug').value.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '').replace(/^-+|-+$/g, '');
             p.short_description = document.getElementById('edit-prod-short').value;
+            p.seo_tags = document.getElementById('edit-prod-seo-tags').value;
             p.meta_description = document.getElementById('edit-prod-meta').value;
             p.features = document.getElementById('edit-prod-features').value.split('\n').filter(x => x.trim());
             p.pricing = document.getElementById('edit-prod-pricing').value.split('\n').filter(x => x.trim());
@@ -1295,6 +1309,7 @@
             document.getElementById('edit-blog-date').value = b.date;
             document.getElementById('edit-blog-image').value = b.image || '';
             document.getElementById('edit-blog-excerpt').value = b.excerpt || '';
+            document.getElementById('edit-blog-seo-tags').value = b.seo_tags || '';
             
             // Populating CTA fields
             document.getElementById('edit-blog-cta1-text').value = b.cta_1_text || '';
@@ -1335,6 +1350,8 @@
             cmsBlogs[idx].cta_2_link = document.getElementById('edit-blog-cta2-link').value;
 
             cmsBlogs[idx].excerpt = document.getElementById('edit-blog-excerpt').value;
+            cmsBlogs[idx].seo_tags = document.getElementById('edit-blog-seo-tags').value;
+
             if (blogQuill) {
                 cmsBlogs[idx].content = blogQuill.root.innerHTML;
             }

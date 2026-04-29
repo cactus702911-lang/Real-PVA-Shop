@@ -164,7 +164,7 @@ function generateFooter(products, siteConfig) {
     }).join('');
 
     const logoContent = siteConfig.logoUrl 
-        ? `<img src="${siteConfig.logoUrl}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto">`
+        ? `<img src="${siteConfig.logoUrl}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto"><span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-extrabold text-2xl tracking-tight ml-2">{{LOGO_TEXT}}</span>`
         : `<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-extrabold text-2xl tracking-tight">{{LOGO_TEXT}}</span>`;
 
     const siteDomain = (siteConfig.siteTitle || 'BestPVAShop').toLowerCase().replace(/\s+/g, '') + '.com';
@@ -183,6 +183,8 @@ function generateFooter(products, siteConfig) {
                         <a href="https://facebook.com/${siteDomain.split('.')[0]}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-white transition-colors" aria-label="Facebook"><i data-lucide="facebook" class="w-5 h-5"></i></a>
                         <a href="https://x.com/${siteDomain.split('.')[0]}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-white transition-colors" aria-label="X (Twitter)"><i data-lucide="twitter" class="w-5 h-5"></i></a>
                         <a href="https://t.me/${(siteConfig.telegram || '').replace('@','')}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-white transition-colors" aria-label="Telegram"><i data-lucide="send" class="w-5 h-5"></i></a>
+                        <a href="{{WHATSAPP_LINK}}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-white transition-colors" aria-label="WhatsApp"><i data-lucide="message-circle" class="w-5 h-5"></i></a>
+                        <a href="mailto:{{SUPPORT_EMAIL}}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-white transition-colors" aria-label="Email"><i data-lucide="mail" class="w-5 h-5"></i></a>
                     </div>
                 </div>
                 
@@ -750,6 +752,7 @@ indexHtml = indexHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', '');
 
 // Global Placeholders
 indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://bestpvashop.com/');
+indexHtml = indexHtml.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="index, follow" />');
 indexHtml = indexHtml.replace(/{{REL_PATH}}/g, './');
 indexHtml = replaceGlobalPlaceholders(indexHtml, siteConfig);
 
@@ -855,6 +858,7 @@ uniqueCategories.forEach(cat => {
     
     catHtml = catHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', '');
 
+    catHtml = catHtml.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="noindex, nofollow" />');
     catHtml = catHtml.replace(/{{REL_PATH}}/g, '../../');
     catHtml = replaceGlobalPlaceholders(catHtml, siteConfig);
 
@@ -1151,6 +1155,7 @@ for (let i = 1; i <= totalPages; i++) {
     blogListHtml = blogListHtml.replace(/{{CRITICAL_CSS}}/g, sharedCssTags);
     
     // Global Placeholders
+    blogListHtml = blogListHtml.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="index, follow" />');
     blogListHtml = blogListHtml.replace(/{{REL_PATH}}/g, pageRelPath);
     blogListHtml = replaceGlobalPlaceholders(blogListHtml, siteConfig);
 
@@ -1187,6 +1192,7 @@ blogs.forEach((post, index) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${post.seo_title || post.title + ' - BestPVAShop'}</title>
     <meta name="description" content="${post.excerpt}">
+    ${post.seo_tags && post.seo_tags.trim() !== '' ? `<meta name="keywords" content="${post.seo_tags}">` : ''}
     <link rel="canonical" href="${getDynamicUrl('blog', post.slug)}" />
     <meta name="robots" content="index, follow" />
     <link rel="preload" href="${sharedCssHref}" as="style">
@@ -1461,7 +1467,8 @@ products.forEach(product => {
 
     html = html.replace(/{{SEO_TITLE}}/g, seoTitle);
     html = html.replace(/{{SEO_DESCRIPTION}}/g, seoDesc);
-    html = html.replace('{{SEO_TAGS}}', `
+    
+    let seoTagsHtml = `
         <link rel="canonical" href="${getDynamicUrl('product', slug)}" />
         <meta name="robots" content="index, follow" />
         <meta property="og:title" content="${seoTitle}" />
@@ -1471,7 +1478,13 @@ products.forEach(product => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="${seoTitle}" />
         <meta name="twitter:description" content="${seoDesc}" />
-    `);
+    `;
+    
+    if (product.seo_tags && product.seo_tags.trim() !== '') {
+        seoTagsHtml += `\n        <meta name="keywords" content="${product.seo_tags}" />`;
+    }
+
+    html = html.replace('{{SEO_TAGS}}', seoTagsHtml);
     html = html.replace('{{JSON_LD}}', `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`);
 
     // Content
@@ -1574,6 +1587,7 @@ function buildStaticPage(pagePath, title, description, content, jsonLd) {
     html = html.replace(/{{CRITICAL_CSS}}/g, sharedCssTags);
     html = html.replace('{{PRODUCT_IMAGE_PRELOAD}}', '');
     
+    html = html.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="noindex, nofollow" />');
     html = html.replace(/{{REL_PATH}}/g, relPath);
     html = replaceGlobalPlaceholders(html, siteConfig);
     fs.writeFileSync(path.join(dir, 'index.html'), minifyHTML(html));
@@ -1923,6 +1937,7 @@ sitemapPageHtml = sitemapPageHtml.replace('{{LATEST_ARTICLES}}', ''); // Clear l
 sitemapPageHtml = sitemapPageHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig));
 sitemapPageHtml = sitemapPageHtml.replace(/{{CRITICAL_CSS}}/g, sharedCssTags);
 sitemapPageHtml = sitemapPageHtml.replace(/Best PVA Shop – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | BestPVAShop');
+sitemapPageHtml = sitemapPageHtml.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="noindex, nofollow" />');
 
 // Important: Replace all global placeholders in sitemap page too
 sitemapPageHtml = replaceGlobalPlaceholders(sitemapPageHtml, siteConfig);
@@ -1979,7 +1994,14 @@ try {
 console.log("feed.xml created.");
 
 const robots = `User-agent: *
-Allow: /
+Disallow: /
+Allow: /$
+Allow: /blog/
+Allow: /product/
+Allow: /images/
+Allow: /*.css$
+Allow: /*.js$
+Allow: /favicon.svg
 Sitemap: ${getDynamicUrl('home')}${paths.sitemap}`;
 fs.writeFileSync('robots.txt', robots);
 console.log("robots.txt created.");
