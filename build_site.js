@@ -773,7 +773,7 @@ sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:im
 let rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-  <title>${escapeXml(siteConfig.siteTitle || 'BestPVAShop')}</title>
+  <title>${escapeXml(siteConfig.siteTitle || 'RealPVAShop')}</title>
   <link>${escapeXml(getDynamicUrl('home'))}</link>
   <description>${escapeXml('Buy verified accounts and digital services')}</description>
   <language>en-us</language>
@@ -1190,7 +1190,7 @@ blogs.forEach((post, index) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${post.seo_title || post.title + ' - BestPVAShop'}</title>
+    <title>${post.seo_title || post.title + ' - RealPVAShop'}</title>
     <meta name="description" content="${post.excerpt}">
     ${post.seo_tags && post.seo_tags.trim() !== '' ? `<meta name="keywords" content="${post.seo_tags}">` : ''}
     <link rel="canonical" href="${getDynamicUrl('blog', post.slug)}" />
@@ -1442,7 +1442,7 @@ products.forEach(product => {
         {
             "@context": "https://schema.org/",
             "@type": "Organization",
-            "name": "BestPVAShop",
+            "name": "RealPVAShop",
             "url": getDynamicUrl('home'),
             "logo": siteConfig.logoUrl || getDynamicUrl('home') + "favicon.svg"
         }
@@ -1645,7 +1645,7 @@ buildStaticPage('about', 'About Us', 'Learn about RealPVAShop – your trusted s
         <a href="/" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 hover:scale-105 transition-transform">Explore All Services <i data-lucide="arrow-right" class="w-5 h-5"></i></a>
     </div>
 `);
-buildStaticPage('contact', 'Contact Us', 'Get in touch with BestPVAShop for 24/7 support via WhatsApp, Telegram, or Email. We respond within minutes.', `
+buildStaticPage('contact', 'Contact Us', 'Get in touch with RealPVAShop for 24/7 support via WhatsApp, Telegram, or Email. We respond within minutes.', `
     <div class="text-center mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Get In <span class="text-cyan-400">Touch</span></h2>
         <p class="text-slate-400 max-w-2xl mx-auto">Have questions? Need help? Our support team is available 24/7 and typically responds within minutes.</p>
@@ -1806,13 +1806,13 @@ buildPolicyPage('policies/privacy-policy', 'Privacy Policy', 'Read the RealPVASh
     { title: 'Contact Us', body: '<p>If you have questions about this privacy policy, please contact us at <a href="mailto:' + siteConfig.supportEmail + '" class="text-cyan-400 hover:underline">' + siteConfig.supportEmail + '</a>.</p>' }
 ]);
 
-buildPolicyPage('policies/terms-and-conditions', 'Terms and Conditions', 'Read the BestPVAShop terms and conditions. Understand the rules and guidelines for using our services.', [
-    { title: 'Acceptance of Terms', body: '<p>By accessing and using BestPVAShop (bestpvashop.com), you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our services.</p>' },
-    { title: 'Services Description', body: '<p>BestPVAShop provides digital services including phone-verified accounts (PVA), review management packages, and related digital products. All services are intended for legitimate business, marketing, and research purposes only.</p>' },
+buildPolicyPage('policies/terms-and-conditions', 'Terms and Conditions', 'Read the RealPVAShop terms and conditions. Understand the rules and guidelines for using our services.', [
+    { title: 'Acceptance of Terms', body: '<p>By accessing and using RealPVAShop (realpvashop.com), you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our services.</p>' },
+    { title: 'Services Description', body: '<p>RealPVAShop provides digital services including phone-verified accounts (PVA), review management packages, and related digital products. All services are intended for legitimate business, marketing, and research purposes only.</p>' },
     { title: 'User Responsibilities', body: '<ul class="list-disc pl-5 space-y-1"><li>You must be at least 18 years old to use our services</li><li>You are responsible for maintaining the confidentiality of your account credentials</li><li>You agree to use purchased accounts in compliance with applicable laws and platform terms of service</li><li>You must not use our services for any illegal or unauthorized purpose</li></ul>' },
     { title: 'Payment Terms', body: '<p>All prices are listed in USD. Payment is required before delivery of any service. We accept cryptocurrency and other secure digital payment methods. All sales are final unless covered by our replacement guarantee.</p>' },
-    { title: 'Intellectual Property', body: '<p>All content on this website, including text, graphics, logos, and images, is the property of BestPVAShop and is protected by applicable intellectual property laws. Unauthorized reproduction is prohibited.</p>' },
-    { title: 'Limitation of Liability', body: '<p>BestPVAShop shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services. Our total liability shall not exceed the amount paid for the specific service in question.</p>' },
+    { title: 'Intellectual Property', body: '<p>All content on this website, including text, graphics, logos, and images, is the property of RealPVAShop and is protected by applicable intellectual property laws. Unauthorized reproduction is prohibited.</p>' },
+    { title: 'Limitation of Liability', body: '<p>RealPVAShop shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services. Our total liability shall not exceed the amount paid for the specific service in question.</p>' },
     { title: 'Changes to Terms', body: '<p>We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting to this page. Continued use of our services constitutes acceptance of the updated terms.</p>' }
 ]);
 
