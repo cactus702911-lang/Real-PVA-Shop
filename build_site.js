@@ -44,7 +44,7 @@ const gradients = sandbox.gradients || {}; // gradients might be missing or defi
 const redirects = sandbox.redirects || siteConfig.redirects || []; // For 301 redirects
 
 // --- URL Configuration ---
-const baseUrl = siteConfig.baseUrl || 'https://bestpvashop.com/';
+const baseUrl = siteConfig.baseUrl || 'https://realpvashop.com/';
 const paths = siteConfig.pathConfig || {
     product: 'product',
     category: 'categories',
@@ -167,7 +167,7 @@ function generateFooter(products, siteConfig) {
         ? `<img src="${siteConfig.logoUrl}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto"><span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-extrabold text-2xl tracking-tight ml-2">{{LOGO_TEXT}}</span>`
         : `<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-extrabold text-2xl tracking-tight">{{LOGO_TEXT}}</span>`;
 
-    const siteDomain = (siteConfig.siteTitle || 'BestPVAShop').toLowerCase().replace(/\s+/g, '') + '.com';
+    const siteDomain = (siteConfig.siteTitle || 'RealPVAShop').toLowerCase().replace(/\s+/g, '') + '.com';
 
     return `
         <div class="max-w-7xl mx-auto px-4">
@@ -366,11 +366,11 @@ function replaceGlobalPlaceholders(html, siteConfig) {
     output = output.replace(/{{WHATSAPP_LINK}}/g, `https://wa.me/${(siteConfig.whatsapp || '').replace(/[^0-9]/g, '')}`);
     output = output.replace(/{{TELEGRAM_LINK}}/g, `https://t.me/${(siteConfig.telegram || '').replace('@', '')}`);
     output = output.replace(/{{SUPPORT_EMAIL}}/g, siteConfig.supportEmail || '');
-    output = output.replace(/{{SITE_TITLE}}/g, siteConfig.siteTitle || 'BestPVAShop');
-    output = output.replace(/{{SITE_NAME}}/g, siteConfig.siteTitle || 'BestPVAShop');
-    output = output.replace(/{{SITE_DOMAIN}}/g, (siteConfig.siteTitle || 'BestPVAShop').toLowerCase().replace(/\s+/g, '') + '.com');
+    output = output.replace(/{{SITE_TITLE}}/g, siteConfig.siteTitle || 'RealPVAShop');
+    output = output.replace(/{{SITE_NAME}}/g, siteConfig.siteTitle || 'RealPVAShop');
+    output = output.replace(/{{SITE_DOMAIN}}/g, (siteConfig.siteTitle || 'RealPVAShop').toLowerCase().replace(/\s+/g, '') + '.com');
     output = output.replace(/{{META_DESCRIPTION}}/g, siteConfig.metaDescription || '');
-    output = output.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText || 'BestPVAShop');
+    output = output.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText || 'RealPVAShop');
     output = output.replace(/{{LOGO_BADGE}}/g, siteConfig.logoBadge || '');
     output = output.replace(/{{FAVICON_URL}}/g, siteConfig.faviconUrl || '/favicon.svg');
     output = output.replace(/{{LOGO_URL}}/g, siteConfig.logoUrl || '/favicon.svg');
@@ -502,7 +502,7 @@ function renderProductCard(product, basePath = '/', isPriority = false) {
     const overlayLayerHtml = fullImgUrl ? '' : `<div class="absolute inset-0 ${overlayClass} transition-colors duration-300"></div>`;
     const overlayTextHtml = fullImgUrl ? '' : `
             <div class="absolute top-3 left-3 bg-red-500/90 backdrop-blur-md border border-white/20 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow-lg z-10">
-                <span class="text-yellow-300 text-sm">Sale!</span> BestPVAShop
+                <span class="text-yellow-300 text-sm">Sale!</span> RealPVAShop
             </div>
             
             <h3 class="text-xl font-bold leading-tight text-white mb-4 drop-shadow-lg z-10 relative">${overlayTitle}</h3>
@@ -555,7 +555,7 @@ function generateRichDescription(product) {
         <p class="mb-4">
             In the modern digital landscape, having a reliable <strong>${productName}</strong> is essential for building trust and scaling operations. 
             Whether you are a startup, an established agency, or an individual marketer, high-quality verified accounts and authentic reviews provide the stability you need. 
-            At <strong class="text-cyan-400">BestPVAShop</strong>, we supply premium ${productName} that are fully verified and ready to deploy. 
+            At <strong class="text-cyan-400">RealPVAShop</strong>, we supply premium ${productName} that are fully verified and ready to deploy. 
         </p>
 
         <h3 class="text-lg font-bold text-white mb-3 mt-8">Core Benefits of ${productName}</h3>
@@ -592,7 +592,7 @@ function generateRichDescription(product) {
 
         <h3 class="text-lg font-bold text-white mb-3 mt-8">Secure Your ${productName} Today</h3>
         <p class="mb-4">
-            Don't let verification hurdles slow down your growth. Buying a ${productName} from BestPVAShop is a strategic investment in your digital infrastructure. 
+            Don't let verification hurdles slow down your growth. Buying a ${productName} from RealPVAShop is a strategic investment in your digital infrastructure. 
             Select your package above and experience seamless delivery and 24/7 dedicated support.
         </p>
     `;
@@ -751,7 +751,7 @@ indexHtml = indexHtml.replace(/{{CRITICAL_CSS}}/g, sharedCssTags);
 indexHtml = indexHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', '');
 
 // Global Placeholders
-indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://bestpvashop.com/');
+indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://realpvashop.com/');
 indexHtml = indexHtml.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="index, follow" />');
 indexHtml = indexHtml.replace(/{{REL_PATH}}/g, './');
 indexHtml = replaceGlobalPlaceholders(indexHtml, siteConfig);
@@ -809,7 +809,7 @@ uniqueCategories.forEach(cat => {
     catHtml = catHtml.replace('{{HEADER}}', generateFullHeader('../../', products, categories, siteConfig));
     
     // SEO & Hero
-    const catTitle = `${cat} Accounts & Reviews | BestPVAShop`;
+    const catTitle = `${cat} Accounts & Reviews | RealPVAShop`;
     
     // Replace Category Options
     catHtml = catHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
@@ -1067,7 +1067,7 @@ for (let i = 1; i <= totalPages; i++) {
     blogListHtml = blogListHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
 
     const pageTitleSuffix = i > 1 ? ` - Page ${i}` : '';
-    const blogTitle = `BestPVAShop Blog – Digital Marketing Tips${pageTitleSuffix}`;
+    const blogTitle = `RealPVAShop Blog – Digital Marketing Tips${pageTitleSuffix}`;
     const blogDesc = 'Unlock the secrets of digital marketing. Expert strategies, safety tips, and growth hacks for your business.';
 
     // Enhanced Hero for Blog
@@ -1347,7 +1347,7 @@ products.forEach(product => {
         const relOverlayLayerHtml = relImgUrl ? '' : `<div class="absolute inset-0 ${relOverlayClass} transition-colors duration-300"></div>`;
         const relOverlayTextHtml = relImgUrl ? '' : `
                     <div class="absolute top-2 left-2 bg-red-500/90 backdrop-blur-md border border-white/10 text-xs font-bold px-3 py-1 rounded flex gap-1 z-10">
-                        <span class="text-yellow-300 text-sm">Sale!</span> BestPVAShop
+                        <span class="text-yellow-300 text-sm">Sale!</span> RealPVAShop
                     </div>
                     <h3 class="font-bold text-lg leading-tight mb-2 px-2 drop-shadow-md z-10 relative">${p.display_title || p.title.replace(/^Buy\s+/i, '')}</h3>
                     <div class="bg-white/10 hover:bg-white/20 text-xs font-bold px-4 py-1.5 rounded-full cursor-pointer transition-colors border border-white/20 z-10">ORDER NOW</div>
@@ -1414,7 +1414,7 @@ products.forEach(product => {
             "name": product.title,
             "description": product.meta_description || product.short_description,
             "sku": String(product.id),
-            "brand": { "@type": "Brand", "name": "BestPVAShop" },
+            "brand": { "@type": "Brand", "name": "RealPVAShop" },
             "offers": {
                 "@type": "AggregateOffer",
                 "priceCurrency": "USD",
@@ -1454,12 +1454,12 @@ products.forEach(product => {
     html = html.replace('{{HEADER}}', generateFullHeader('../../', products, categories, siteConfig));
 
     // SEO
-    const seoTitle = product.seo_title || `${product.title} – Verified & Fast | BestPVAShop`;
+    const seoTitle = product.seo_title || `${product.title} – Verified & Fast | RealPVAShop`;
     let seoDesc = product.meta_description || product.short_description || `Buy ${product.title} instantly.`;
     
     // Ensure Description Length (120-160 chars)
     if (seoDesc.length < 120) {
-        seoDesc += " Get high-quality verified accounts instantly at BestPVAShop. Secure, fast, and reliable service with 24/7 support.";
+        seoDesc += " Get high-quality verified accounts instantly at RealPVAShop. Secure, fast, and reliable service with 24/7 support.";
     }
     if (seoDesc.length > 160) {
         seoDesc = seoDesc.substring(0, 157) + "...";
@@ -1567,7 +1567,7 @@ function buildStaticPage(pagePath, title, description, content, jsonLd) {
     
     const pageUrl = getDynamicUrl('home') + pagePath + '/';
     html = html.replace(/{{CANONICAL_URL}}/g, pageUrl);
-    html = html.replace(/{{SITE_TITLE}}/g, `${title} | BestPVAShop`);
+    html = html.replace(/{{SITE_TITLE}}/g, `${title} | RealPVAShop`);
     html = html.replace(/{{META_DESCRIPTION}}/g, description);
     
     // Inject JSON-LD Schema if provided (for SEO Rich Results)
@@ -1599,10 +1599,10 @@ function buildStaticPage(pagePath, title, description, content, jsonLd) {
     sitemap += '  </url>\n';
 }
 
-buildStaticPage('about', 'About Us', 'Learn about BestPVAShop – your trusted source for verified PVA accounts, authentic reviews, and premium digital services since 2020.', `
+buildStaticPage('about', 'About Us', 'Learn about RealPVAShop – your trusted source for verified PVA accounts, authentic reviews, and premium digital services since 2020.', `
     <div class="text-center mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Who We <span class="text-cyan-400">Are</span></h2>
-        <p class="text-slate-400 max-w-3xl mx-auto text-lg leading-relaxed">BestPVAShop is a leading provider of premium, phone-verified accounts (PVA) and authentic digital services. Since 2020, we have been helping businesses, marketers, and entrepreneurs scale their online presence with high-quality, reliable accounts.</p>
+        <p class="text-slate-400 max-w-3xl mx-auto text-lg leading-relaxed">RealPVAShop is a leading provider of premium, phone-verified accounts (PVA) and authentic digital services. Since 2020, we have been helping businesses, marketers, and entrepreneurs scale their online presence with high-quality, reliable accounts.</p>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
         <div class="bg-[#1E293B]/60 border border-white/5 rounded-2xl p-6 text-center hover:border-cyan-500/30 transition-all">
@@ -1704,7 +1704,7 @@ const faqHtml = faqItems.map(f => `
         <div class="px-6 pb-6 md:px-8 md:pb-8 text-slate-400 leading-relaxed border-t border-white/5 pt-4">${f.a}</div>
     </details>
 `).join('\n');
-buildStaticPage('faq', 'Frequently Asked Questions', 'Find answers to common questions about PVA accounts, delivery, payments, refunds, and more at BestPVAShop.', `
+buildStaticPage('faq', 'Frequently Asked Questions', 'Find answers to common questions about PVA accounts, delivery, payments, refunds, and more at RealPVAShop.', `
     <div class="text-center mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Common <span class="text-cyan-400">Questions</span></h2>
         <p class="text-slate-400 max-w-2xl mx-auto">Everything you need to know about our services. Can't find what you're looking for? Contact our 24/7 support team.</p>
@@ -1796,7 +1796,7 @@ function buildPolicyPage(pagePath, title, desc, sections) {
     `);
 }
 
-buildPolicyPage('policies/privacy-policy', 'Privacy Policy', 'Read the BestPVAShop privacy policy. Learn how we collect, use, and protect your personal information.', [
+buildPolicyPage('policies/privacy-policy', 'Privacy Policy', 'Read the RealPVAShop privacy policy. Learn how we collect, use, and protect your personal information.', [
     { title: 'Information We Collect', body: '<p>We collect information you provide directly, such as your name, email address, and payment details when placing an order. We also automatically collect certain technical data including your IP address, browser type, and device information to improve our services.</p>' },
     { title: 'How We Use Your Information', body: '<p>Your information is used to:</p><ul class="list-disc pl-5 space-y-1"><li>Process and deliver your orders</li><li>Communicate order updates and support responses</li><li>Improve our website and services</li><li>Prevent fraud and ensure security</li></ul>' },
     { title: 'Data Protection', body: '<p>We implement industry-standard security measures including SSL encryption and secure payment processing. Your payment information is never stored on our servers and is processed through trusted third-party payment providers.</p>' },
@@ -1816,7 +1816,7 @@ buildPolicyPage('policies/terms-and-conditions', 'Terms and Conditions', 'Read t
     { title: 'Changes to Terms', body: '<p>We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting to this page. Continued use of our services constitutes acceptance of the updated terms.</p>' }
 ]);
 
-buildPolicyPage('policies/refund-policy', 'Refund Policy', 'Read the BestPVAShop refund and replacement policy. Learn about our 24-hour replacement guarantee.', [
+buildPolicyPage('policies/refund-policy', 'Refund Policy', 'Read the RealPVAShop refund and replacement policy. Learn about our 24-hour replacement guarantee.', [
     { title: 'Replacement Guarantee', body: '<p>We stand behind the quality of our products. If any account or service does not work as described upon delivery, we will provide a <strong class="text-white">free replacement</strong> within 24 hours of your purchase.</p>' },
     { title: 'How to Request a Replacement', body: '<ol class="list-decimal pl-5 space-y-2"><li>Contact our support team within <strong class="text-white">24 hours</strong> of receiving your order</li><li>Provide your order details and a clear description of the issue</li><li>Our team will verify the issue and process your replacement promptly</li></ol>' },
     { title: 'Eligibility Conditions', body: '<ul class="list-disc pl-5 space-y-1"><li>Replacement requests must be submitted within 24 hours of delivery</li><li>The account must not have been modified, had its password changed, or had recovery information altered</li><li>You must provide evidence of the issue (screenshots if applicable)</li></ul>' },
@@ -1824,7 +1824,7 @@ buildPolicyPage('policies/refund-policy', 'Refund Policy', 'Read the BestPVAShop
     { title: 'Contact for Refund Requests', body: '<p>For all replacement and refund inquiries, please contact our support team via <a href="https://wa.me/' + (siteConfig.whatsapp || '').replace(/[^0-9]/g, '') + '" class="text-green-400 hover:underline">WhatsApp</a> or <a href="mailto:' + siteConfig.supportEmail + '" class="text-cyan-400 hover:underline">Email</a>. We aim to resolve all issues within 12 hours.</p>' }
 ]);
 
-buildPolicyPage('policies/shipping-or-delivery-policy', 'Shipping and Delivery Policy', 'Read the BestPVAShop delivery policy. All digital products are delivered instantly via email after payment.', [
+buildPolicyPage('policies/shipping-or-delivery-policy', 'Shipping and Delivery Policy', 'Read the RealPVAShop delivery policy. All digital products are delivered instantly via email after payment.', [
     { title: 'Digital Delivery', body: '<p>All our products and services are <strong class="text-white">100% digital</strong>. There is no physical shipping involved. You will receive your account credentials, login details, or service confirmation directly via email after payment.</p>' },
     { title: 'Delivery Timeframe', body: '<ul class="list-disc pl-5 space-y-1"><li><strong class="text-white">Instant Delivery:</strong> Most orders are delivered automatically within minutes of payment confirmation</li><li><strong class="text-white">Standard Delivery:</strong> Some specialized or bulk orders may take up to 24 hours</li><li><strong class="text-white">Custom Orders:</strong> Large or custom orders will have delivery timelines communicated individually</li></ul>' },
     { title: 'Delivery Method', body: '<p>Order details are delivered to the email address provided during checkout. Please ensure your email address is correct and check your spam/junk folder if you do not receive your order within the expected timeframe.</p>' },
@@ -1936,7 +1936,7 @@ sitemapPageHtml = sitemapPageHtml.replace('{{PRODUCT_GRID}}', sitemapHtmlContent
 sitemapPageHtml = sitemapPageHtml.replace('{{LATEST_ARTICLES}}', ''); // Clear latest articles section
 sitemapPageHtml = sitemapPageHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig));
 sitemapPageHtml = sitemapPageHtml.replace(/{{CRITICAL_CSS}}/g, sharedCssTags);
-sitemapPageHtml = sitemapPageHtml.replace(/Best PVA Shop – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | BestPVAShop');
+sitemapPageHtml = sitemapPageHtml.replace(/Real PVA Shop – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | RealPVAShop');
 sitemapPageHtml = sitemapPageHtml.replace(/{{ROBOTS_META}}/g, '<meta name="robots" content="noindex, nofollow" />');
 
 // Important: Replace all global placeholders in sitemap page too
