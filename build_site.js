@@ -1994,14 +1994,8 @@ try {
 console.log("feed.xml created.");
 
 const robots = `User-agent: *
-Disallow: /
-Allow: /$
-Allow: /blog/
-Allow: /product/
-Allow: /images/
-Allow: /*.css$
-Allow: /*.js$
-Allow: /favicon.svg
+Allow: /
+
 Sitemap: ${getDynamicUrl('home')}${paths.sitemap}`;
 fs.writeFileSync('robots.txt', robots);
 console.log("robots.txt created.");

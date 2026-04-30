@@ -2,6 +2,7 @@
 
 // --- Site Configuration (CMS Data) ---
 var siteConfig = {
+    "baseUrl": "https://realpvashop.com/",
     "siteTitle": "Real PVA Shop",
     "metaDescription": "Boost your online business using genuine real accounts. Get real reviews and secure, high-quality accounts—delivered instantly.\n",
     "logoText": "RealPVAShop",
@@ -10,9 +11,9 @@ var siteConfig = {
     "heroSubtitle": "Get real reviews and secure, high-quality accounts—delivered instantly.",
     "heroButtonText": "Explore Services",
     "heroButtonLink": "#products-section",
-    "supportEmail": "support@bestpvashop.com",
+    "supportEmail": "support@realpvashop.com",
     "whatsapp": "+1(548)580-1949",
-    "telegram": "BestPVAShops",
+    "telegram": "RealPVAShops",
     "themeColor": "#0B1120",
     "popupTitle": "",
     "popupMessage": "",
