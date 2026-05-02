@@ -1,4 +1,4 @@
-// site_data.js
+﻿// site_data.js
 
 // --- Site Configuration (CMS Data) ---
 var siteConfig = {
@@ -33,8 +33,7 @@ var categories = [
         "items": [
             "Old Gmail Accounts",
             "Google Reviews",
-            "Hire Google Ads Manager",
-            "New Product"
+            "Hire Google Ads Manager"
         ]
     },
     {
@@ -50,7 +49,8 @@ var categories = [
         "description": "Verified social media and developer accounts for Instagram, Twitter, Tinder, and GitHub.",
         "content": "\n            <h2 class=\"text-3xl font-bold text-white mb-6\">Premium Verified Accounts for Every Platform</h2>\n            <p class=\"text-slate-300 mb-4 text-lg\">\n                In the digital age, access is everything. Whether you're a developer needing a **GitHub** account, a marketer targeting **Instagram** and **Twitter**, or exploring niche platforms like **Tinder**, \n                having a verified, ready-to-use account saves you time and hassle.\n            </p>\n            <p class=\"text-slate-300 mb-8 text-lg\">\n                **RealPVAShop** is your one-stop marketplace for high-quality PVA (Phone Verified Accounts). We take care of the verification process so you can focus on what matters—your business.\n            </p>\n\n            <h3 class=\"text-2xl font-bold text-white mb-4\">Why Buy Verified Accounts?</h3>\n            <div class=\"grid grid-cols-1 md:grid-cols-3 gap-6 mb-8\">\n                <div class=\"bg-[#1E293B] p-5 rounded-xl text-center\">\n                    <i data-lucide=\"shield-check\" class=\"w-10 h-10 text-green-400 mx-auto mb-3\"></i>\n                    <h4 class=\"font-bold text-white mb-2\">Instant Access</h4>\n                    <p class=\"text-slate-400 text-sm\">Skip the sign-up and verification delays. Get credentials instantly.</p>\n                </div>\n                <div class=\"bg-[#1E293B] p-5 rounded-xl text-center\">\n                    <i data-lucide=\"globe\" class=\"w-10 h-10 text-blue-400 mx-auto mb-3\"></i>\n                    <h4 class=\"font-bold text-white mb-2\">Global Reach</h4>\n                    <p class=\"text-slate-400 text-sm\">Accounts available from USA, UK, EU, and other top tier regions.</p>\n                </div>\n                <div class=\"bg-[#1E293B] p-5 rounded-xl text-center\">\n                    <i data-lucide=\"lock\" class=\"w-10 h-10 text-purple-400 mx-auto mb-3\"></i>\n                    <h4 class=\"font-bold text-white mb-2\">Ban Resistant</h4>\n                    <p class=\"text-slate-400 text-sm\">Created with unique IPs and device fingerprints for maximum safety.</p>\n                </div>\n            </div>\n\n            <h3 class=\"text-2xl font-bold text-white mb-4\">Popular Account Categories</h3>\n            <ul class=\"list-disc pl-5 space-y-3 mb-8 text-slate-300\">\n                <li><strong>Instagram Accounts:</strong> Perfect for influencer marketing and brand flipping.</li>\n                <li><strong>Twitter (X) Accounts:</strong> Essential for crypto projects and news dissemination.</li>\n                <li><strong>GitHub Accounts:</strong> Aged accounts for developers to host repositories with trust.</li>\n                <li><strong>Tinder Accounts:</strong> Verified profiles for dating app marketing.</li>\n            </ul>\n\n            <p class=\"text-slate-300\">\n                Don't let verification hurdles slow you down. Browse our diverse catalog of verified accounts below and get started today.\n            </p>\n        ",
         "items": [
-            "Tinder Account"
+            "Tinder Account",
+            "MegaPersonals Accounts"
         ]
     },
     {
@@ -98,6 +98,34 @@ var landingPageData = {
 // All 41 Products Data
 var products = [
     {
+        "id": 10,
+        "active": true,
+        "title": "MegaPersonals Accounts – Verified Profiles for Classified Ad Testing & Management",
+        "display_title": "MegaPersonals Accounts",
+        "slug": "megapersonals-accounts-verified-profiles-for-classified-ad-testing--management",
+        "category": "Accounts",
+        "image": "",
+        "image_title": " MegaPersonals Accounts Purchase – Verified Profiles for Ad Listing & Management",
+        "min_price": 40,
+        "max_price": 300,
+        "badge_color": "blue",
+        "is_sale": true,
+        "short_description": "Want to buy MegaPersonals accounts with verified access and instant delivery? Our pre-configured profiles are ready for classified ad testing, listing setup & platform workflow management. Starting from $10.00.",
+        "meta_description": "Looking to buy MegaPersonals accounts with verified access? RealPVAShop offers pre-configured profiles ideal for classified ad testing, listing management & platform onboarding. Instant delivery guaranteed.",
+        "features": [
+            "Feature 1",
+            "Feature 2"
+        ],
+        "pricing": [
+            "$10 - Option 1",
+            "$20 - Option 2"
+        ],
+        "long_description": "<h4>MegaPersonals Accounts – Pre-Verified Profiles for Classified Ad Testing &amp; Platform Management</h4><p>Looking to <strong>acquire MegaPersonals accounts</strong> for legitimate classified ad testing and listing management? RealPVAShop provides fully pre-configured <strong>MegaPersonals profiles</strong> built for professionals who need reliable, verified access for platform onboarding, ad workflow testing, and listing management operations.</p><p>Whether you're a developer testing classified ad workflows, a QA engineer validating listing processes, or a digital marketer analyzing platform behavior — our <strong>MegaPersonals account packages</strong> give you the controlled access you need.</p><h4>Why Choose Our MegaPersonals Account Packages?</h4><p>FeatureDetails✅ Pre-Verified ProfilesReady to use on login — no manual setup required✅ Listing ReadyIdeal for classified ad posting &amp; listing workflow testing✅ Controlled DeliveryCredentials delivered securely to your email within hours✅ QA &amp; Testing SuitableStructured for professional platform testing environments✅ Instant DeliveryAccess details sent directly after payment confirmation✅ Replacement GuaranteeNon-functional accounts replaced hassle-free</p><h4>Who Is This For?</h4><ul><li><strong>Digital Marketers</strong> – Test and manage classified ad listings across multiple profiles</li><li><strong>QA Engineers</strong> – Validate platform onboarding flows and listing submission processes</li><li><strong>App Developers</strong> – Simulate real user behavior within the MegaPersonals ecosystem</li><li><strong>Business Owners</strong> – Manage multiple ad listing identities from a single operation</li><li><strong>Automation Specialists</strong> – Integrate verified accounts into classified ad workflow pipelines</li></ul><h4>Why Use Pre-Verified MegaPersonals Accounts?</h4><p>Pre-configured MegaPersonals profiles offer significant advantages over manually created accounts:</p><ul><li><strong>Instant Access</strong> — Skip lengthy verification steps and start listing immediately</li><li><strong>Reduced Friction</strong> — Pre-verified profiles face fewer platform restrictions on first use</li><li><strong>Workflow Efficiency</strong> — Multiple accounts allow parallel testing of ad listing behavior</li><li><strong>Platform Stability</strong> — Established profiles maintain consistent access without interruption</li><li><strong>Time Saving</strong> — No manual signup process — credentials delivered straight to your inbox</li></ul><h4>Available Package Options</h4><p>Our MegaPersonals account packages are available in multiple tiers:</p><ul><li><strong>Starter Pack</strong> – Single or small batch profiles for basic listing &amp; testing needs</li><li><strong>Professional Pack</strong> – Mid-tier verified accounts for multi-listing management</li><li><strong>Enterprise Pack</strong> – Bulk verified profiles for large-scale ad workflow operations</li></ul><p>Select your preferred option from the dropdown above to view pricing and specifications.</p><h4>Delivery &amp; Replacement Policy</h4><p>🚀 <strong>Instant Delivery</strong> — All account credentials and access instructions are delivered to your inbox within minutes to a few hours of payment confirmation. No waiting — start using immediately.</p><p>🔄 <strong>Replacement Guarantee</strong> — Any account that fails on first login or doesn't match described specifications will be replaced immediately at no additional cost.</p><h4>Frequently Asked Questions</h4><p><strong>❓ Are these MegaPersonals accounts fully verified?</strong> Yes. Every account in our inventory is pre-verified and ready to use upon delivery — no additional verification steps required on your end.</p><p><strong>❓ Can I use these accounts for classified ad posting?</strong> These accounts are configured for testing, onboarding and workflow management purposes. Usage must comply with MegaPersonals platform terms and applicable regulations.</p><p><strong>❓ How many accounts can I order at once?</strong> We offer both single account and bulk package options. For large custom orders, contact our support team via WhatsApp or Telegram for dedicated bulk pricing.</p><p><strong>❓ Will these accounts remain active long-term?</strong> Our profiles are pre-configured for stability. In the rare case of any access issue, our replacement guarantee ensures continuity at no extra charge.</p><p><strong>❓ Is 24/7 support available?</strong> Yes. Our dedicated support team is available around the clock via WhatsApp, Telegram, and Email for any post-purchase queries or account concerns.</p>",
+        "related_ids": [],
+        "seo_title": "MegaPersonals Accounts to Buy – Verified Profiles for Ad Management | RealPVAShop",
+        "seo_tags": "megapersonals accounts, buy megapersonals accounts, verified megapersonals profiles, megapersonals account packages, purchase megapersonals accounts, megapersonals classified accounts, megapersonals ad accounts, realpvashop megapersonals, bulk megapersonals accounts, megapersonals profile purchase, megapersonals listing accounts"
+    },
+    {
         "id": 9,
         "active": true,
         "title": "Hire Google Ads Manager – Expert Campaign Setup & Management",
@@ -130,37 +158,12 @@ var products = [
             "Premium – Monthly Management & Scaling from $250"
         ],
         "long_description": "<h4>Hire a Google Ads Manager Who Focuses on One Thing: Your ROI</h4><p>Let's be honest — most businesses that run Google Ads on their own end up wasting a significant portion of their budget. Not because Google Ads doesn't work, but because managing it effectively requires a specific combination of technical knowledge, analytical thinking, and creative execution that takes years to develop.</p><p>If you are a business owner, e-commerce brand, or marketing lead who wants Google Ads to actually generate leads and sales instead of just burning through your monthly budget, hiring a professional Google Ads manager is one of the smartest investments you can make.</p><p>I am <strong>MD Maruf</strong>, a certified Google Ads specialist with hands-on experience managing campaigns across dozens of industries — from local service businesses to e-commerce stores spending thousands of dollars a month on paid search. I set up campaigns the right way from day one, optimize them continuously based on real data, and provide you with transparent reporting so you always know exactly where your money is going.</p><p>You can <a href='https://www.fiverr.com/mdmaruf501/setup-and-manage-google-ads-campaign-for-your-business-growth' target='_blank' rel='noopener noreferrer' class='text-cyan-400 hover:underline font-bold'>view my full service and packages on Fiverr</a> and get started today.</p><h4>What You Get When You Work With Me</h4><p>FeatureDetails✅ Complete Account SetupI build your campaign architecture from scratch — properly structured campaigns, tightly themed ad groups, and match type strategies that minimize wasted spend from day one✅ Deep Keyword ResearchI identify the high-intent search terms your ideal customers are actually using — and build a comprehensive negative keyword list to block irrelevant traffic immediately✅ Professional Ad CopyEvery headline and description is written to match search intent, highlight your unique value proposition, and drive clicks from the right people✅ Conversion TrackingI implement full conversion tracking via Google Tag Manager and Google Analytics 4, so you have complete visibility into which campaigns, keywords, and ads are generating real results✅ Bid OptimizationI select and continuously refine the right bidding strategy for your goals — whether that is Target CPA, Target ROAS, or Enhanced CPC — adjusting based on real performance data✅ Weekly ReportingYou receive clear, jargon-free performance reports every week showing clicks, conversions, cost per acquisition, and the key actions taken to improve results</p><h4>Who Is This Service For?</h4><ul><li><strong>Local Business Owners</strong> – You know your trade inside out but Google Ads feels overwhelming. Let me handle the technical side so you can focus on running your business.</li><li><strong>E-commerce Brands</strong> – You have a product that converts but you are not getting enough qualified traffic. I will build Shopping and Search campaigns that put your products in front of buyers who are ready to purchase.</li><li><strong>Startups & New Businesses</strong> – You need to generate leads quickly but cannot afford to waste budget on a trial-and-error learning curve. I skip the learning curve for you.</li><li><strong>Agencies & Marketing Teams</strong> – You need a reliable Google Ads specialist to white-label or collaborate on client campaigns without adding headcount.</li><li><strong>Businesses With Existing Campaigns</strong> – Your current campaigns are live but underperforming. I will conduct a full audit, identify what is wasting your budget, and rebuild the strategy around what actually works.</li></ul><h4>Why a Well-Managed Google Ads Campaign Pays for Itself</h4><p>Here is a simple reality check: if you are spending $1,000 a month on Google Ads and your campaigns are poorly structured, you might be wasting 30-50% of that budget on irrelevant clicks, wrong match types, or keywords that get traffic but never convert. That is $300-$500 every single month going straight to Google with nothing to show for it.</p><p>A professional Google Ads manager who knows how to eliminate that waste and reinvest it into what works will typically recover their management fee many times over — often within the first month. The math is straightforward: better targeting + better ad copy + better conversion tracking = lower cost per acquisition and higher return on ad spend.</p><p>Beyond the immediate savings, a properly structured campaign builds compounding value over time. Google rewards accounts with strong Quality Scores with lower CPCs (cost per click). That means the longer your campaigns run well, the cheaper your clicks get — giving you a growing competitive advantage over businesses that are still guessing their way through Google Ads.</p><h4>The Importance of Account Infrastructure</h4><p>One thing many advertisers overlook is the foundation their Google Ads account runs on. Google evaluates account history, billing consistency, and policy compliance as part of how it assesses your account's trust level. A strong account foundation — built on established, verified Google profiles — gives your campaigns the best possible starting position.</p><p>This is why many serious advertisers also invest in resources like our <a href='/product/old-gmail-accounts-aged-verified-google-profiles-for-professional-use/' class='text-cyan-400 hover:underline font-bold'>aged Gmail accounts</a> for account setup and our <a href='/product/google-reviews-boost-your-business-reputation-with-verified-feedback/' class='text-cyan-400 hover:underline font-bold'>Google Reviews packages</a> to build the brand credibility that improves ad performance and landing page conversion rates simultaneously.</p><h4>How to Get Started</h4><p>Getting started is simple. Head over to my Fiverr profile, select the package that fits your current situation, and place your order. After payment, I will send you a brief onboarding questionnaire to understand your business, goals, and current setup. From there, I get to work building or optimizing your campaigns — typically delivering initial results within the first 7-14 days.</p><p>👉 <a href='https://www.fiverr.com/mdmaruf501/setup-and-manage-google-ads-campaign-for-your-business-growth' target='_blank' rel='noopener noreferrer' class='text-cyan-400 hover:underline font-bold'>Click here to view packages and hire me on Fiverr</a></p><h4>Frequently Asked Questions</h4><p><strong>❓ How much does Google Ads management cost?</strong> My packages start from $30 for a campaign audit and basic setup, with full ongoing monthly management available from $250. The right package depends on your ad spend level and the complexity of your campaigns.</p><p><strong>❓ How long before I see results?</strong> Most campaigns begin generating data and initial results within the first week. For Smart Bidding strategies that rely on conversion data, expect the algorithm to fully optimize over 4-6 weeks. I set realistic expectations from the start — no overnight miracles, but steady, data-backed growth.</p><p><strong>❓ Do I need to have an existing Google Ads account?</strong> No. I can set up a brand new account from scratch, or take over and optimize your existing account. Either way, the process starts with a full audit of your current situation.</p><p><strong>❓ What industries do you specialize in?</strong> I have managed campaigns across local services (plumbing, HVAC, cleaning, legal), e-commerce, SaaS, hospitality, and digital products. If you have a business that can generate leads or sales online, Google Ads can work for it.</p><p><strong>❓ Will I get reports and updates?</strong> Yes. You receive weekly performance reports and are welcome to message me any time through Fiverr for updates, questions, or to discuss strategy adjustments.</p><p><strong>❓ What if I am not satisfied with the results?</strong> I work transparently and communicate openly. If something is not performing as expected, I adjust the strategy and explain exactly what I am changing and why. My goal is always your success — a satisfied client is a returning client.</p>",
-        "related_ids": [6, 7],
+        "related_ids": [
+            6,
+            7
+        ],
         "seo_title": "Hire Google Ads Manager – Expert Campaign Setup & ROI Growth | RealPVAShop",
         "seo_tags": "hire google ads manager, google ads expert, google ads campaign management, google ads specialist, ppc management, paid search expert"
-    },
-    {
-        "id": 8,
-        "active": true,
-        "title": "New Product",
-        "display_title": "",
-        "slug": "new-product-8",
-        "category": "Google",
-        "image": "",
-        "image_title": "",
-        "min_price": 9.99,
-        "max_price": 19.99,
-        "badge_color": "blue",
-        "is_sale": true,
-        "short_description": "Short description here.",
-        "meta_description": "",
-        "features": [
-            "Feature 1",
-            "Feature 2"
-        ],
-        "pricing": [
-            "$10 - Option 1",
-            "$20 - Option 2"
-        ],
-        "long_description": "<p>Detailed description...</p>",
-        "related_ids": [],
-        "seo_title": "",
-        "seo_tags": ""
     },
     {
         "id": 7,
@@ -320,7 +323,10 @@ var blogs = [
         "excerpt": "Running Google Ads without a clear strategy is like burning cash. This guide breaks down how to set up, optimize, and scale Google Ads campaigns that deliver real ROI — written by an experienced Google Ads manager.",
         "image": "",
         "date": "Apr 30, 2026",
-        "related_ids": [6, 7],
+        "related_ids": [
+            6,
+            7
+        ],
         "cta_1_text": "Need a professional to manage your Google Ads? 👉 Hire an Expert on Fiverr",
         "cta_1_link": "https://www.fiverr.com/mdmaruf501/setup-and-manage-google-ads-campaign-for-your-business-growth",
         "cta_2_text": "Need a verified Google Ads account? 👉 Browse Google Services",
@@ -335,7 +341,9 @@ var blogs = [
         "excerpt": "Thinking about buying a Tinder account? This complete guide covers everything — from what verified Tinder profiles are, why marketers and developers buy them, how to choose the right package, and what to avoid. Read before you buy.",
         "image": "",
         "date": "Apr 30, 2026",
-        "related_ids": [5],
+        "related_ids": [
+            5
+        ],
         "cta_1_text": "Ready to get started? 👉 Browse Tinder Account Packages",
         "cta_1_link": "/product/tinder-account-packages-verified-profiles-for-app-testing-qa/",
         "cta_2_text": "Need other verified accounts? 👉 Browse All Account Types",
