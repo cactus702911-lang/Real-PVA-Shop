@@ -1,6 +1,6 @@
-service_account.json.json
-service_account*.json
- node_modules/
+﻿node_modules/
+.tmp/
+dist/
+.env
 .DS_Store
-Thumbs.db
-*.log
+.vscode/
