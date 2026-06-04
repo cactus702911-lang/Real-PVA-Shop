@@ -149,7 +149,7 @@ blogs = sandbox.blogs || [];
 gradients = sandbox.gradients || {}; // gradients might be missing or defined elsewhere
 
 // --- URL Configuration ---
-baseUrl = siteConfig.baseUrl || 'https://buysmmworld.com/';
+baseUrl = siteConfig.baseUrl || 'https://realpvashop.com/';
 paths = siteConfig.pathConfig || {
     product: 'product',
     category: 'category',
@@ -264,10 +264,10 @@ function generateFooter(products, siteConfig, basePath = './') {
     }).join('');
 
     const logoContent = siteConfig.logoUrl 
-        ? `<img src="${getRelativeUrl(siteConfig.logoUrl, basePath)}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto"> <span class="logo-text text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-extrabold text-2xl tracking-tight">${siteConfig.logoText || 'buysmmworld'}</span>`
+        ? `<img src="${getRelativeUrl(siteConfig.logoUrl, basePath)}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto"> <span class="logo-text text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-extrabold text-2xl tracking-tight">${siteConfig.logoText || 'realpvashop'}</span>`
         : `<span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-extrabold text-2xl tracking-tight">{{LOGO_TEXT}}</span>`;
 
-    const siteDomain = (siteConfig.siteTitle || 'buysmmworld').toLowerCase().replace(/\s+/g, '') + '.com';
+    const siteDomain = (siteConfig.siteTitle || 'realpvashop').toLowerCase().replace(/\s+/g, '') + '.com';
 
     return `
         <div class="max-w-7xl mx-auto px-4">
@@ -494,11 +494,11 @@ function replaceGlobalPlaceholders(html, siteConfig, basePath = './') {
     output = output.replace(/{{ANALYTICS_SCRIPT}}/g, analyticsScript);
     output = output.replace(/{{ANALYTICS_ID}}/g, siteConfig.analyticsId || '');
     
-    output = output.replace(/{{SITE_TITLE}}/g, siteConfig.siteTitle || 'buysmmworld');
-    output = output.replace(/{{SITE_NAME}}/g, siteConfig.siteTitle || 'buysmmworld');
-    output = output.replace(/{{SITE_DOMAIN}}/g, (siteConfig.siteTitle || 'buysmmworld').toLowerCase().replace(/\s+/g, '') + '.com');
+    output = output.replace(/{{SITE_TITLE}}/g, siteConfig.siteTitle || 'realpvashop');
+    output = output.replace(/{{SITE_NAME}}/g, siteConfig.siteTitle || 'realpvashop');
+    output = output.replace(/{{SITE_DOMAIN}}/g, (siteConfig.siteTitle || 'realpvashop').toLowerCase().replace(/\s+/g, '') + '.com');
     output = output.replace(/{{META_DESCRIPTION}}/g, siteConfig.metaDescription || '');
-    output = output.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText || 'buysmmworld');
+    output = output.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText || 'realpvashop');
     output = output.replace(/{{LOGO_BADGE}}/g, siteConfig.logoBadge || '');
     output = output.replace(/{{FAVICON_URL}}/g, getRelativeUrl(siteConfig.faviconUrl || '/favicon.svg', basePath));
     output = output.replace(/{{FAVICON_URL_BASE}}/g, basePath);
@@ -650,7 +650,7 @@ function generateRichDescription(product) {
         <p class="mb-4">
             In the modern world of online business, having a reliable <strong>${productName}</strong> is crucial. 
             Whether you are an entrepreneur, a digital marketer, or a freelancer, verified accounts provide the stability and credibility you need. 
-            At <strong class="text-emerald-600">buysmmworld</strong>, we provide premium, fully verified ${productName} that are ready to use. 
+            At <strong class="text-emerald-600">realpvashop</strong>, we provide premium, fully verified ${productName} that are ready to use. 
             Our accounts are safe, secure, and come with a replacement guarantee.
         </p>
 
@@ -685,7 +685,7 @@ function generateRichDescription(product) {
 
         <h3 class="text-lg font-bold text-slate-900 mb-3 mt-8">Conclusion</h3>
         <p class="mb-4">
-            In conclusion, buying a ${productName} from buysmmworld is a smart investment for your digital growth. 
+            In conclusion, buying a ${productName} from realpvashop is a smart investment for your digital growth. 
             Save time, avoid hassles, and focus on scaling your business while we handle the technicalities. 
             Order your ${productName} today and experience the difference!
         </p>
@@ -851,7 +851,7 @@ const homepagePreload = products.slice(0, 2).map(p => {
 indexHtml = indexHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', homepagePreload);
 
 // Global Placeholders
-indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://buysmmworld.com/');
+indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://realpvashop.com/');
 indexHtml = indexHtml.replace('{{SECTION_TITLE}}', 'Most Popular Accounts');
 indexHtml = indexHtml.replace('{{SECTION_SUBTITLE}}', '<span class="w-8 h-px bg-emerald-200"></span> Best Selling');
 indexHtml = replaceGlobalPlaceholders(indexHtml, siteConfig, './');
@@ -869,7 +869,7 @@ sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
 // Add Homepage to Sitemap
 sitemap += '  <url>\n';
-sitemap += '    <loc>https://buysmmworld.com/</loc>\n';
+sitemap += '    <loc>https://realpvashop.com/</loc>\n';
 sitemap += '    <lastmod>' + new Date().toISOString().split('T')[0] + '</lastmod>\n';
 sitemap += '    <priority>1.0</priority>\n';
 sitemap += '  </url>\n';
@@ -894,7 +894,7 @@ uniqueCategories.forEach(cat => {
     catHtml = catHtml.replace('{{HEADER}}', generateFullHeader('../../', products, categories, siteConfig));
     
     // SEO & Hero
-    const catTitle = `${cat} Accounts & Reviews | buysmmworld`;
+    const catTitle = `${cat} Accounts & Reviews | realpvashop`;
     
     // Replace Category Options
     catHtml = catHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
@@ -1166,7 +1166,7 @@ for (let i = 1; i <= totalPages; i++) {
     blogListHtml = blogListHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
 
     const pageTitleSuffix = i > 1 ? ` - Page ${i}` : '';
-    const blogTitle = `buysmmworld Blog – Digital Marketing Tips${pageTitleSuffix}`;
+    const blogTitle = `realpvashop Blog – Digital Marketing Tips${pageTitleSuffix}`;
     const blogDesc = 'Unlock the secrets of digital marketing. Expert strategies, safety tips, and growth hacks for your business.';
 
     // Enhanced Hero for Blog
@@ -1293,18 +1293,18 @@ blogs.forEach((post, index) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${post.title} - buysmmworld</title>
+    <title>${post.title} - realpvashop</title>
     <meta name="description" content="${post.excerpt}">
     <link rel="icon" type="image/png" href="{{FAVICON_URL}}" sizes="any">
     <link rel="canonical" href="${getDynamicUrl('blog', post.slug)}" />
     <meta name="robots" content="index, follow" />
     <meta property="og:type" content="article" />
-    <meta property="og:title" content="${post.title} - buysmmworld" />
+    <meta property="og:title" content="${post.title} - realpvashop" />
     <meta property="og:description" content="${post.excerpt}" />
     <meta property="og:url" content="${getDynamicUrl('blog', post.slug)}" />
     <meta property="og:image" content="${post.image ? getDynamicUrl('home') + String(post.image).replace('./', '') : getDynamicUrl('home') + 'favicon.png'}" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${post.title} - buysmmworld" />
+    <meta name="twitter:title" content="${post.title} - realpvashop" />
     <meta name="twitter:description" content="${post.excerpt}" />
     <meta name="twitter:image" content="${post.image ? getDynamicUrl('home') + String(post.image).replace('./', '') : getDynamicUrl('home') + 'favicon.png'}" />
     <style>${cssContent}</style>
@@ -1497,7 +1497,7 @@ products.forEach(product => {
         const relOverlayLayerHtml = relImgUrl ? '' : `<div class="absolute inset-0 ${relOverlayClass} transition-colors duration-300"></div>`;
         const relOverlayTextHtml = relImgUrl ? '' : `
                     <div class="absolute top-2 left-2 bg-red-500/90 backdrop-blur-md border border-white/10 text-xs font-bold px-3 py-1 rounded flex gap-1 z-10">
-                        <span class="text-yellow-300 text-sm">Sale!</span> buysmmworld
+                        <span class="text-yellow-300 text-sm">Sale!</span> realpvashop
                     </div>
                     <h3 class="font-bold text-lg leading-tight mb-2 px-2 drop-shadow-md z-10 relative text-white">${p.display_title || p.title.replace(/^Buy\s+/i, '')}</h3>
                     <div class="bg-white/10 hover:bg-white/20 text-xs font-bold px-4 py-1.5 rounded-full cursor-pointer transition-colors border border-white/20 z-10 text-white">GET STARTED</div>
@@ -1563,7 +1563,7 @@ products.forEach(product => {
         "name": product.title,
         "description": product.meta_description || product.short_description,
         "sku": String(product.id),
-        "brand": { "@type": "Brand", "name": "buysmmworld" },
+        "brand": { "@type": "Brand", "name": "realpvashop" },
         "offers": {
             "@type": "AggregateOffer",
             "priceCurrency": "USD",
@@ -1585,12 +1585,12 @@ products.forEach(product => {
     html = html.replace('{{HEADER}}', generateFullHeader('../../', products, categories, siteConfig));
 
     // SEO
-    const seoTitle = `${product.title} – Verified & Fast | buysmmworld`;
+    const seoTitle = `${product.title} – Verified & Fast | realpvashop`;
     let seoDesc = product.meta_description || product.short_description || `Buy ${product.title} instantly.`;
     
     // Ensure Description Length (120-160 chars)
     if (seoDesc.length < 120) {
-        seoDesc += " Get high-quality verified accounts instantly at buysmmworld. Secure, fast, and reliable service with 24/7 support.";
+        seoDesc += " Get high-quality verified accounts instantly at realpvashop. Secure, fast, and reliable service with 24/7 support.";
     }
     if (seoDesc.length > 160) {
         seoDesc = seoDesc.substring(0, 157) + "...";
@@ -1786,7 +1786,7 @@ sitemapPageHtml = sitemapPageHtml.replace('hidden sm:flex', 'hidden');
 sitemapPageHtml = sitemapPageHtml.replace('{{LATEST_ARTICLES}}', ''); // Clear latest articles section
 sitemapPageHtml = sitemapPageHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig, './'));
 sitemapPageHtml = sitemapPageHtml.replace(/{{CRITICAL_CSS}}/g, `<style>${cssContent}</style>`);
-sitemapPageHtml = sitemapPageHtml.replace(/buysmmworld – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | buysmmworld');
+sitemapPageHtml = sitemapPageHtml.replace(/realpvashop – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | realpvashop');
 
 // Important: Replace all global placeholders in sitemap page too
 sitemapPageHtml = replaceGlobalPlaceholders(sitemapPageHtml, siteConfig, './');

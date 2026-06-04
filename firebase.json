@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "buysmmworld",
+    "site": "realpvashop",
     "public": ".",
     "ignore": [
       "firebase.json",
