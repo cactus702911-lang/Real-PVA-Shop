@@ -83,27 +83,45 @@ function initUI() {
         const searchTerm = (searchInput ? searchInput.value : '').toLowerCase().trim();
         const selectedCategory = (categorySelect ? categorySelect.value : 'All Categories');
         const cards = productGrid.querySelectorAll('.card-glow');
+        const isFilterActive = searchTerm !== '' || selectedCategory !== 'All Categories';
+        const loadMoreBtnContainer = document.getElementById('view-all-products-container');
         
         // Use document fragment for better performance if we were adding/removing, 
         // but here we just toggle display. Still, we can minimize reflows.
         productGrid.style.display = 'none'; 
         
         let visibleCount = 0;
+        let hasHiddenCards = false;
         cards.forEach(card => {
-            const title = card.querySelector('h3, .font-bold.text-slate-100')?.textContent.toLowerCase() || '';
-            const category = card.querySelector('.text-cyan-400')?.textContent || '';
+            const title = card.getAttribute('data-title') || card.querySelector('h3, .font-bold.text-slate-100, a')?.textContent.toLowerCase() || '';
+            const category = card.getAttribute('data-category') || card.querySelector('.text-cyan-400')?.textContent || '';
             const matchesSearch = title.includes(searchTerm);
-            const matchesCategory = selectedCategory === 'All Categories' || category === selectedCategory;
+            const matchesCategory = selectedCategory === 'All Categories' || category.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
             
             if (matchesSearch && matchesCategory) {
-                card.style.display = '';
-                visibleCount++;
+                const isLoadMoreCard = card.classList.contains('js-load-more-card');
+                if (!isFilterActive && !window.allProductsLoaded && isLoadMoreCard) {
+                    card.style.display = 'none';
+                    hasHiddenCards = true;
+                } else {
+                    card.style.display = '';
+                    visibleCount++;
+                }
             } else {
                 card.style.display = 'none';
             }
         });
         
         productGrid.style.display = '';
+
+        // Toggle load more button container visibility
+        if (loadMoreBtnContainer) {
+            if (isFilterActive || window.allProductsLoaded || !hasHiddenCards) {
+                loadMoreBtnContainer.classList.add('hidden');
+            } else {
+                loadMoreBtnContainer.classList.remove('hidden');
+            }
+        }
 
         let noResults = document.getElementById('no-results-message');
         if (visibleCount === 0) {
@@ -136,6 +154,16 @@ function initUI() {
     }
     if (categorySelect) categorySelect.addEventListener('change', filterProducts, { passive: true });
 
+    // 2.2 View All Products Load More Logic
+    window.allProductsLoaded = false;
+    const viewAllProductsBtn = document.getElementById('view-all-products-btn');
+    if (viewAllProductsBtn) {
+        viewAllProductsBtn.addEventListener('click', () => {
+            window.allProductsLoaded = true;
+            filterProducts();
+        });
+    }
+
     // 3. Popup & Mobile Menu Logic (Streamlined)
     function closeMobileMenu() {
         if (!mobileMenu) return;
@@ -161,10 +189,10 @@ function initUI() {
                 if (menuCloseIcon) menuCloseIcon.classList.remove('hidden');
                 document.body.classList.add('overflow-hidden');
             } else closeMobileMenu();
-        }, { passive: true });
+        });
     }
 
-    if (mobileBackdrop) mobileBackdrop.addEventListener('click', closeMobileMenu, { passive: true });
+    if (mobileBackdrop) mobileBackdrop.addEventListener('click', closeMobileMenu);
 
     document.querySelectorAll('.mobile-cat-toggle').forEach(toggle => {
         toggle.addEventListener('click', (e) => {
@@ -176,7 +204,7 @@ function initUI() {
                 const isHidden = items.classList.toggle('hidden');
                 if (icon) icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
             }
-        }, { passive: true });
+        });
     });
 
     window.openPopup = function() {
@@ -222,8 +250,8 @@ function initUI() {
             const allBtns = tabContainer.querySelectorAll('[id^="tab-btn-"]');
             const allTabs = tabContainer.querySelectorAll('[id^="tab-"]');
 
-            const activeClass = "px-4 md:px-8 py-3 bg-[#1E293B]/50 text-cyan-400 font-bold rounded-t-lg border-t border-x border-white/5 text-sm relative top-[1px] transition-all";
-            const inactiveClass = "px-4 md:px-8 py-3 text-slate-400 hover:text-slate-200 font-medium text-sm transition-colors";
+            const activeClass = "px-4 md:px-8 py-3 bg-white text-cyan-600 font-bold rounded-t-lg border-t border-x border-slate-200 text-sm relative top-[1px] transition-all";
+            const inactiveClass = "px-4 md:px-8 py-3 text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors";
 
             // Update Tabs
             allTabs.forEach(tab => {
@@ -276,7 +304,10 @@ function initUI() {
         if (path.includes(`/${paths.product}/`)) {
             const slugPart = path.split(`/${paths.product}/`)[1];
             if (!slugPart) return;
-            const slug = slugPart.replace(/\/+$/, '');
+            let slug = slugPart.split(/[?#]/)[0];
+            slug = slug.replace(/\/+$/, '');
+            slug = slug.replace(/(?:index)?\.html$/, '');
+            slug = slug.replace(/\/+$/, '');
             const product = findBySlug(window.products, slug);
             if (product) {
                 console.log("Hydrating Product:", product.title);
@@ -296,6 +327,11 @@ function initUI() {
                     const count = window.reviewsData.filter(r => r.productId === product.id).length;
                     reviewCountBadge.textContent = count;
                 }
+                const reviewsCountLabel = document.getElementById('reviews-count-label');
+                if (reviewsCountLabel && window.reviewsData) {
+                    const count = window.reviewsData.filter(r => r.productId === product.id).length;
+                    reviewsCountLabel.textContent = `${count} Reviews`;
+                }
             }
         }
         
@@ -303,7 +339,10 @@ function initUI() {
         else if (path.includes(`/${paths.category}/`)) {
             const slugPart = path.split(`/${paths.category}/`)[1];
             if (!slugPart) return;
-            const slug = slugPart.replace(/\/+$/, '');
+            let slug = slugPart.split(/[?#]/)[0];
+            slug = slug.replace(/\/+$/, '');
+            slug = slug.replace(/(?:index)?\.html$/, '');
+            slug = slug.replace(/\/+$/, '');
             const category = findBySlug(window.categories, slug);
             if (category) {
                 console.log("Hydrating Category:", category.name);
@@ -356,6 +395,303 @@ function initUI() {
         }
     }
     hydratePage();
+
+    // 7. Floating Multi-Chat Widget (WhatsApp & Telegram)
+    function initWhatsAppChat() {
+        const whatsappNum = window.siteConfig?.whatsapp;
+        const telegramUsername = window.siteConfig?.telegram;
+        if (!whatsappNum && !telegramUsername) return;
+
+        const cleanNumber = whatsappNum ? whatsappNum.replace(/\D/g, '') : '';
+        const waUrl = cleanNumber ? `https://wa.me/${cleanNumber}` : '';
+        const tgUrl = telegramUsername ? `https://t.me/${telegramUsername}` : '';
+
+        // Create Container
+        const container = document.createElement('div');
+        container.id = 'wa-floating-chat';
+        
+        // Add custom style tag for complete CSS independence
+        const style = document.createElement('style');
+        style.textContent = `
+            #wa-floating-chat {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                z-index: 999999;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 16px;
+                font-family: 'Outfit', 'Inter', sans-serif;
+                transition: all 0.3s ease;
+            }
+            .wa-submenu {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 12px;
+                opacity: 0;
+                transform: translateY(20px) scale(0.9);
+                pointer-events: none;
+                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .wa-submenu.open {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                pointer-events: auto;
+            }
+            .wa-sub-item, .wa-main-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                position: relative;
+            }
+            /* Sub Tooltips */
+            .wa-sub-tooltip {
+                background-color: #1e293b;
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 700;
+                padding: 8px 12px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                opacity: 0;
+                transform: translateX(10px);
+                transition: all 0.3s ease;
+                pointer-events: none;
+                white-space: nowrap;
+            }
+            .wa-sub-item:hover .wa-sub-tooltip {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            /* Main Tooltip */
+            .wa-main-tooltip {
+                background-color: #ffffff;
+                color: #1e293b;
+                font-size: 14px;
+                font-weight: 700;
+                padding: 10px 16px;
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                border: 1px solid #f1f5f9;
+                opacity: 0;
+                transform: translateX(10px);
+                transition: all 0.3s ease;
+                pointer-events: none;
+                white-space: nowrap;
+            }
+            .wa-main-tooltip-visible {
+                opacity: 1 !important;
+                transform: translateX(0) !important;
+            }
+            .wa-main-item:hover .wa-main-tooltip {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            /* Launcher Button */
+            .wa-launcher-btn {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #10b981, #059669);
+                border: none;
+                color: #ffffff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                position: relative;
+                outline: none;
+            }
+            .wa-launcher-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
+            }
+            .wa-launcher-btn svg {
+                width: 28px;
+                height: 28px;
+                transition: transform 0.3s ease;
+                fill: none;
+                stroke: currentColor;
+            }
+            .wa-launcher-btn.active svg {
+                transform: rotate(90deg);
+            }
+            /* Sub Buttons */
+            .wa-sub-btn {
+                width: 52px;
+                height: 52px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #ffffff;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                text-decoration: none;
+            }
+            .wa-sub-btn:hover {
+                transform: scale(1.1) translateY(-2px);
+            }
+            .wa-wa-btn {
+                background-color: #25d366;
+                box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+            }
+            .wa-wa-btn:hover {
+                background-color: #20ba5a;
+                box-shadow: 0 10px 24px rgba(37, 211, 102, 0.4);
+            }
+            .wa-tg-btn {
+                background-color: #0088cc;
+                box-shadow: 0 8px 20px rgba(0, 136, 204, 0.3);
+            }
+            .wa-tg-btn:hover {
+                background-color: #0077b5;
+                box-shadow: 0 10px 24px rgba(0, 136, 204, 0.4);
+            }
+            .wa-sub-btn svg {
+                width: 24px;
+                height: 24px;
+                fill: currentColor;
+            }
+            /* Pulse Animation */
+            @keyframes wa-pulse-ring {
+                0% { transform: scale(0.95); opacity: 0.5; }
+                50% { transform: scale(1.15); opacity: 0.3; }
+                100% { transform: scale(1.3); opacity: 0; }
+            }
+            .wa-pulse-ring {
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+                background-color: #10b981;
+                animation: wa-pulse-ring 2s infinite ease-out;
+                pointer-events: none;
+            }
+            /* Mobile Adjustments */
+            @media (max-width: 768px) {
+                #wa-floating-chat {
+                    bottom: 16px;
+                    right: 16px;
+                    gap: 12px;
+                }
+                .wa-launcher-btn {
+                    width: 56px;
+                    height: 56px;
+                }
+                .wa-sub-btn {
+                    width: 48px;
+                    height: 48px;
+                }
+                .wa-sub-tooltip {
+                    display: none !important;
+                }
+                .wa-main-tooltip {
+                    display: none !important;
+                }
+            }
+            .hidden {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Build Inner HTML (Conditional based on WhatsApp and Telegram settings)
+        let submenuContent = '';
+        if (tgUrl) {
+            submenuContent += `
+                <div class="wa-sub-item">
+                    <span class="wa-sub-tooltip">Telegram</span>
+                    <a href="${tgUrl}" target="_blank" rel="noopener noreferrer" aria-label="Chat on Telegram" class="wa-sub-btn wa-tg-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512">
+                            <path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.5-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/>
+                        </svg>
+                    </a>
+                </div>
+            `;
+        }
+        if (waUrl) {
+            submenuContent += `
+                <div class="wa-sub-item">
+                    <span class="wa-sub-tooltip">WhatsApp</span>
+                    <a href="${waUrl}" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp" class="wa-sub-btn wa-wa-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L3 472l110.3-29c32.7 17.8 69 27.2 106.4 27.2 122.4 0 222-99.6 222-222 0-59.3-23-115.1-60.8-157.1zM223.9 446c-33.1 0-65.6-8.9-93.9-25.7l-6.7-4-65.7 17.2 17.5-64-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+                        </svg>
+                    </a>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div id="wa-submenu" class="wa-submenu">
+                ${submenuContent}
+            </div>
+            <div class="wa-main-item">
+                <span class="wa-main-tooltip" id="wa-main-tooltip">Contact Us</span>
+                <button id="wa-launcher" class="wa-launcher-btn" aria-label="Toggle chat options">
+                    <span class="wa-pulse-ring"></span>
+                    <svg id="wa-icon-msg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <svg id="wa-icon-close" class="hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(container);
+
+        // Core Interactive States
+        const launcher = document.getElementById('wa-launcher');
+        const submenu = document.getElementById('wa-submenu');
+        const iconMsg = document.getElementById('wa-icon-msg');
+        const iconClose = document.getElementById('wa-icon-close');
+        const mainTooltip = document.getElementById('wa-main-tooltip');
+
+        // Toggle Open/Close
+        launcher.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = submenu.classList.toggle('open');
+            launcher.classList.toggle('active', isOpen);
+            if (isOpen) {
+                iconMsg.classList.add('hidden');
+                iconClose.classList.remove('hidden');
+                if (mainTooltip) mainTooltip.classList.remove('wa-main-tooltip-visible');
+            } else {
+                iconMsg.classList.remove('hidden');
+                iconClose.classList.add('hidden');
+            }
+        });
+
+        // Close when clicking outside the widget
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                submenu.classList.remove('open');
+                launcher.classList.remove('active');
+                iconMsg.classList.remove('hidden');
+                iconClose.classList.add('hidden');
+            }
+        });
+
+        // Delayed display of main tooltip
+        setTimeout(() => {
+            if (mainTooltip && !submenu.classList.contains('open')) {
+                mainTooltip.classList.add('wa-main-tooltip-visible');
+            }
+        }, 3000);
+
+        // Hide main tooltip on user action
+        launcher.addEventListener('mouseenter', () => {
+            if (mainTooltip) mainTooltip.classList.remove('wa-main-tooltip-visible');
+        });
+    }
+    initWhatsAppChat();
 
     // 6. Hydration Logic (Lucide Icons)
     function initIcons() {

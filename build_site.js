@@ -2,9 +2,115 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-// --- 1. Load Data ---
-console.log("Reading site_data.js...");
-const dataJsContent = fs.readFileSync('site_data.js', 'utf8');
+// Global declarations for variables used in other functions via closure
+let siteConfig, categories, reviewsData, products, blogs, gradients, baseUrl, paths;
+
+// Function to convert non-webp images to WebP and update references
+async function autoConvertImagesToWebp() {
+    console.log("Checking for images to convert to WebP...");
+    let sharp;
+    try {
+        sharp = require('sharp');
+    } catch (e) {
+        console.error("Sharp is not installed, skipping auto image conversion.");
+        return;
+    }
+
+    const imagesDirs = [
+        __dirname,
+        path.join(__dirname, 'images'),
+        path.join(__dirname, 'images', 'products')
+    ];
+
+    let siteDataChanged = false;
+    let siteTemplateChanged = false;
+
+    let siteData = fs.readFileSync('site_data.js', 'utf8');
+    let siteTemplate = fs.readFileSync('site_template.html', 'utf8');
+
+    for (const dir of imagesDirs) {
+        if (!fs.existsSync(dir)) continue;
+
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+            const ext = path.extname(file).toLowerCase();
+            if (['.png', '.jpg', '.jpeg'].includes(ext)) {
+                const inputPath = path.join(dir, file);
+
+                if (fs.statSync(inputPath).isDirectory()) continue;
+
+                // Ignore favicon.png to avoid breaking standard browser expectations
+                if (file.toLowerCase() === 'favicon.png') continue;
+
+                const baseName = path.basename(file, ext);
+                const outputName = baseName + '.webp';
+                const outputPath = path.join(dir, outputName);
+
+                console.log(`Converting image: ${file} -> ${outputName}...`);
+                try {
+                    const inputBuffer = fs.readFileSync(inputPath);
+                    await sharp(inputBuffer)
+                        .webp({ quality: 80 })
+                        .toFile(outputPath);
+
+                    console.log(`Successfully converted: ${file} -> ${outputName}`);
+                    
+                    // Remove original file
+                    fs.unlinkSync(inputPath);
+                    console.log(`Deleted original: ${file}`);
+
+                    // Determine relative path based on directory level
+                    const relDir = path.basename(dir) === 'products' ? '/images/products/' : '/images/';
+                    const oldRef = `${relDir}${file}`;
+                    const newRef = `${relDir}${outputName}`;
+
+                    // Update site_data.js references
+                    if (siteData.includes(oldRef)) {
+                        siteData = siteData.split(oldRef).join(newRef);
+                        siteDataChanged = true;
+                    }
+                    const altOldRef = oldRef.substring(1);
+                    const altNewRef = newRef.substring(1);
+                    if (siteData.includes(altOldRef)) {
+                        siteData = siteData.split(altOldRef).join(altNewRef);
+                        siteDataChanged = true;
+                    }
+
+                    // Update site_template.html references
+                    if (siteTemplate.includes(oldRef)) {
+                        siteTemplate = siteTemplate.split(oldRef).join(newRef);
+                        siteTemplateChanged = true;
+                    }
+                    if (siteTemplate.includes(altOldRef)) {
+                        siteTemplate = siteTemplate.split(altOldRef).join(altNewRef);
+                        siteTemplateChanged = true;
+                    }
+                } catch (err) {
+                    console.error(`Error converting ${file}:`, err);
+                }
+            }
+        }
+    }
+
+    if (siteDataChanged) {
+        fs.writeFileSync('site_data.js', siteData, 'utf8');
+        console.log("Updated site_data.js with new WebP image references.");
+    }
+    if (siteTemplateChanged) {
+        fs.writeFileSync('site_template.html', siteTemplate, 'utf8');
+        console.log("Updated site_template.html with new WebP image references.");
+    }
+}
+
+async function startBuild() {
+    await autoConvertImagesToWebp();
+    runBuild();
+}
+
+function runBuild() {
+    // --- 1. Load Data ---
+    console.log("Reading site_data.js...");
+    const dataJsContent = fs.readFileSync('site_data.js', 'utf8');
 
 // Append assignment to ensure we capture const/let variables which are not automatically attached to sandbox
 const scriptContent = dataJsContent + `
@@ -34,17 +140,17 @@ try {
     process.exit(1);
 }
 
-const siteConfig = sandbox.siteConfig;
-const categories = sandbox.categories;
-const reviewsData = sandbox.reviewsData;
+siteConfig = sandbox.siteConfig;
+categories = sandbox.categories;
+reviewsData = sandbox.reviewsData;
 const productsRaw = sandbox.products;
-const products = productsRaw ? productsRaw.filter(p => p.active !== false) : [];
-const blogs = sandbox.blogs || [];
-const gradients = sandbox.gradients || {}; // gradients might be missing or defined elsewhere
+products = productsRaw ? productsRaw.filter(p => p.active !== false) : [];
+blogs = sandbox.blogs || [];
+gradients = sandbox.gradients || {}; // gradients might be missing or defined elsewhere
 
 // --- URL Configuration ---
-const baseUrl = siteConfig.baseUrl || 'https://pvamarketplace.com/';
-const paths = siteConfig.pathConfig || {
+baseUrl = siteConfig.baseUrl || 'https://buysmmworld.com/';
+paths = siteConfig.pathConfig || {
     product: 'product',
     category: 'category',
     blog: 'blog',
@@ -74,6 +180,22 @@ function getDynamicUrl(type, slug = '', isAbsolute = true) {
         return `${baseUrl.replace(/\/+$/, '')}${urlPath}`;
     }
     return urlPath;
+}
+
+/**
+ * Helper to construct relative URLs based on the target url and base path
+ */
+function getRelativeUrl(url, basePath) {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//') || url.startsWith('#') || url.startsWith('mailto:') || url.startsWith('tel:')) {
+        return url;
+    }
+    // Remove leading slash if present
+    let cleanUrl = url;
+    if (cleanUrl.startsWith('/')) {
+        cleanUrl = cleanUrl.substring(1);
+    }
+    return basePath + cleanUrl;
 }
 
 if (!products || !siteConfig) {
@@ -120,7 +242,7 @@ function cleanDirectory(dir) {
     }
 }
 
-function generateFooter(products, siteConfig) {
+function generateFooter(products, siteConfig, basePath = './') {
     // Group products by category
     const categoriesGrouped = {};
     products.forEach(p => {
@@ -132,20 +254,20 @@ function generateFooter(products, siteConfig) {
     const categoryLinks = Object.keys(categoriesGrouped).slice(0, 5).map(catName => {
         const catData = categories.find(c => c.name === catName);
         if (!catData || !catData.slug) return '';
-        const url = getDynamicUrl('category', catData.slug, false);
-        return `<li><a href="${url}" class="text-slate-500 hover:text-cyan-600 transition-colors text-sm">${catName}</a></li>`;
+        const url = getRelativeUrl(getDynamicUrl('category', catData.slug, false), basePath);
+        return `<li><a href="${url}" class="text-slate-400 hover:text-emerald-400 transition-colors text-sm">${catName}</a></li>`;
     }).filter(Boolean).join('');
 
     const popularProducts = products.filter(p => p.is_sale).slice(0, 5).map(p => {
-        const url = getDynamicUrl('product', p.slug, false);
-        return `<li><a href="${url}" class="text-slate-500 hover:text-cyan-600 transition-colors text-sm">${p.display_title || p.title}</a></li>`;
+        const url = getRelativeUrl(getDynamicUrl('product', p.slug, false), basePath);
+        return `<li><a href="${url}" class="text-slate-400 hover:text-emerald-400 transition-colors text-sm">${p.display_title || p.title}</a></li>`;
     }).join('');
 
     const logoContent = siteConfig.logoUrl 
-        ? `<img src="${siteConfig.logoUrl}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto"> <span class="logo-text text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 font-extrabold text-2xl tracking-tight">${siteConfig.logoText || 'pvamarketplace'}</span>`
-        : `<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 font-extrabold text-2xl tracking-tight">{{LOGO_TEXT}}</span>`;
+        ? `<img src="${getRelativeUrl(siteConfig.logoUrl, basePath)}" alt="${siteConfig.logoText || 'Logo'}" class="h-8 w-auto"> <span class="logo-text text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-extrabold text-2xl tracking-tight">${siteConfig.logoText || 'buysmmworld'}</span>`
+        : `<span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 font-extrabold text-2xl tracking-tight">{{LOGO_TEXT}}</span>`;
 
-    const siteDomain = (siteConfig.siteTitle || 'pvamarketplace').toLowerCase().replace(/\s+/g, '') + '.com';
+    const siteDomain = (siteConfig.siteTitle || 'buysmmworld').toLowerCase().replace(/\s+/g, '') + '.com';
 
     return `
         <div class="max-w-7xl mx-auto px-4">
@@ -154,80 +276,80 @@ function generateFooter(products, siteConfig) {
                     <div class="flex items-center gap-2 mb-4">
                         ${logoContent}
                     </div>
-                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
                         {{META_DESCRIPTION}}
                     </p>
                     <div class="flex gap-3">
-                        <a href="https://facebook.com/${siteDomain.split('.')[0]}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-cyan-600 transition-colors" aria-label="Facebook"><i data-lucide="facebook" class="w-5 h-5"></i></a>
-                        <a href="https://x.com/${siteDomain.split('.')[0]}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-cyan-600 transition-colors" aria-label="X (Twitter)"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                        <a href="https://t.me/${(siteConfig.telegram || '').replace('@','')}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-cyan-600 transition-colors" aria-label="Telegram"><i data-lucide="send" class="w-5 h-5"></i></a>
-                        <a href="{{WHATSAPP_LINK}}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-green-500 transition-colors" aria-label="WhatsApp"><i data-lucide="message-circle" class="w-5 h-5"></i></a>
-                        <a href="mailto:{{SUPPORT_EMAIL}}" class="text-slate-400 hover:text-red-500 transition-colors" aria-label="Email"><i data-lucide="mail" class="w-5 h-5"></i></a>
+                        <a href="https://facebook.com/${siteDomain.split('.')[0]}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-emerald-400 transition-colors" aria-label="Facebook"><i data-lucide="facebook" class="w-5 h-5"></i></a>
+                        <a href="https://x.com/${siteDomain.split('.')[0]}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-emerald-400 transition-colors" aria-label="X (Twitter)"><i data-lucide="twitter" class="w-5 h-5"></i></a>
+                        <a href="https://t.me/${(siteConfig.telegram || '').replace('@','')}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-emerald-400 transition-colors" aria-label="Telegram"><i data-lucide="send" class="w-5 h-5"></i></a>
+                        <a href="{{WHATSAPP_LINK}}" target="_blank" rel="nofollow" class="text-slate-400 hover:text-green-400 transition-colors" aria-label="WhatsApp"><i data-lucide="message-circle" class="w-5 h-5"></i></a>
+                        <a href="mailto:{{SUPPORT_EMAIL}}" class="text-slate-400 hover:text-red-400 transition-colors" aria-label="Email"><i data-lucide="mail" class="w-5 h-5"></i></a>
                     </div>
                 </div>
                 
                 <div>
-                    <h4 class="text-slate-900 font-bold mb-4">Solutions</h4>
+                    <h4 class="text-slate-200 font-bold mb-4">Solutions</h4>
                     <ul class="space-y-2">
                         ${categoryLinks}
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="text-slate-900 font-bold mb-4">Top Services</h4>
+                    <h4 class="text-slate-200 font-bold mb-4">Top Services</h4>
                     <ul class="space-y-2">
                         ${popularProducts}
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="text-slate-900 font-bold mb-4">Get in Touch</h4>
-                    <ul class="space-y-2 text-sm text-slate-500">
+                    <h4 class="text-slate-200 font-bold mb-4">Get in Touch</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
                         <li class="flex items-center gap-2">
-                            <i data-lucide="mail" class="w-4 h-4 text-cyan-500"></i> 
-                            <a href="mailto:{{SUPPORT_EMAIL}}" class="hover:text-cyan-600 transition-colors">{{SUPPORT_EMAIL}}</a>
+                            <i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> 
+                            <a href="mailto:{{SUPPORT_EMAIL}}" class="hover:text-emerald-400 transition-colors">{{SUPPORT_EMAIL}}</a>
                         </li>
                         <li class="flex items-center gap-2">
-                            <i data-lucide="phone" class="w-4 h-4 text-green-500"></i> 
-                            <a href="{{WHATSAPP_LINK}}" target="_blank" rel="nofollow" class="hover:text-green-600 transition-colors">{{WHATSAPP}}</a>
+                            <i data-lucide="phone" class="w-4 h-4 text-green-400"></i> 
+                            <a href="{{WHATSAPP_LINK}}" target="_blank" rel="nofollow" class="hover:text-green-400 transition-colors">{{WHATSAPP}}</a>
                         </li>
                         <li class="flex items-center gap-2">
-                            <i data-lucide="send" class="w-4 h-4 text-blue-500"></i> 
-                            <a href="{{TELEGRAM_LINK}}" target="_blank" rel="nofollow" class="hover:text-blue-600 transition-colors">@{{TELEGRAM}}</a>
+                            <i data-lucide="send" class="w-4 h-4 text-emerald-400"></i> 
+                            <a href="{{TELEGRAM_LINK}}" target="_blank" rel="nofollow" class="hover:text-emerald-400 transition-colors">@{{TELEGRAM}}</a>
                         </li>
                     </ul>
                 </div>
             </div>
             
-            <div class="border-t border-slate-200 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                <p class="text-slate-500 text-sm">Copyright © ${new Date().getFullYear()} ${siteDomain}. All rights reserved.</p>
-                <div class="flex gap-4 text-sm text-slate-500">
-                    <a href="${getDynamicUrl('blog', '', false)}" class="hover:text-cyan-600 transition-colors">Blog</a>
-                    <a href="#" class="hover:text-cyan-600 transition-colors">Privacy Policy</a>
-                    <a href="#" class="hover:text-cyan-600 transition-colors">Terms of Service</a>
+            <div class="border-t border-slate-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-slate-400 text-sm">Copyright © ${new Date().getFullYear()} ${siteDomain}. All rights reserved.</p>
+                <div class="flex gap-4 text-sm text-slate-400">
+                    <a href="${getRelativeUrl(getDynamicUrl('blog', '', false), basePath)}" class="hover:text-emerald-400 transition-colors">Blog</a>
+                    <a href="#" class="hover:text-emerald-400 transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-emerald-400 transition-colors">Terms of Service</a>
                 </div>
             </div>
         </div>
     `;
 }
 
-function generateLatestArticlesHtml(blogs) {
+function generateLatestArticlesHtml(blogs, basePath = './') {
     if (!blogs || blogs.length === 0) return '';
     const latest = blogs.slice(0, 3);
     const cards = latest.map(b => `
-        <div class="group relative flex flex-col items-start bg-white p-6 rounded-2xl border border-slate-200 hover:border-cyan-300 hover:shadow-md transition-all">
+        <div class="group relative flex flex-col items-start bg-white p-6 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all">
             <div class="flex items-center gap-x-4 text-xs mb-3">
                 <time datetime="${b.date}" class="text-slate-500">${b.date}</time>
-                <span class="relative z-10 rounded-full bg-cyan-100 px-3 py-1.5 font-medium text-cyan-600">Article</span>
+                <span class="relative z-10 rounded-full bg-emerald-100 px-3 py-1.5 font-medium text-emerald-600">Article</span>
             </div>
-            <h3 class="mt-0 text-lg font-bold leading-6 text-slate-900 group-hover:text-cyan-600 transition-colors">
-                <a href="${getDynamicUrl('blog', b.slug, false)}">
+            <h3 class="mt-0 text-lg font-bold leading-6 text-slate-900 group-hover:text-emerald-600 transition-colors">
+                <a href="${getRelativeUrl(getDynamicUrl('blog', b.slug, false), basePath)}">
                     <span class="absolute inset-0"></span>
                     ${b.title}
                 </a>
             </h3>
             <p class="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">${b.excerpt}</p>
-            <div class="mt-4 flex items-center gap-1 text-cyan-600 text-sm font-bold">
+            <div class="mt-4 flex items-center gap-1 text-emerald-600 text-sm font-bold">
                 Continue Reading <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </div>
         </div>
@@ -238,23 +360,23 @@ function generateLatestArticlesHtml(blogs) {
         <div class="mx-auto max-w-7xl px-4">
             <div class="flex items-center justify-between mb-10">
                 <div>
-                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Recent <span class="text-cyan-600">Insights</span></h2>
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Recent <span class="text-emerald-600">Insights</span></h2>
                     <p class="mt-2 text-lg leading-8 text-slate-600">Strategies, tips, and updates for maximizing your digital presence.</p>
                 </div>
-                <a href="${getDynamicUrl('blog', '', false)}" class="hidden sm:flex items-center gap-1 text-cyan-600 font-bold hover:text-cyan-500 transition-colors">Read All <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+                <a href="${getRelativeUrl(getDynamicUrl('blog', '', false), basePath)}" class="hidden sm:flex items-center gap-1 text-emerald-600 font-bold hover:text-emerald-500 transition-colors">Read All <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 ${cards}
             </div>
             <div class="mt-8 text-center sm:hidden">
-                 <a href="${getDynamicUrl('blog', '', false)}" class="inline-flex items-center gap-1 text-cyan-600 font-bold hover:text-cyan-500 transition-colors">Read All Insights <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+                 <a href="${getRelativeUrl(getDynamicUrl('blog', '', false), basePath)}" class="inline-flex items-center gap-1 text-emerald-600 font-bold hover:text-emerald-500 transition-colors">Read All Insights <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
             </div>
         </div>
     </section>
     `;
 }
 
-function generateRelatedArticlesHtml(product, blogs) {
+function generateRelatedArticlesHtml(product, blogs, basePath = './') {
     if (!blogs || blogs.length === 0) return '';
     
     // 1. Priority: Explicitly related blogs (via related_ids in blog object)
@@ -281,17 +403,17 @@ function generateRelatedArticlesHtml(product, blogs) {
     const title = 'Related Articles';
 
     const cards = displayBlogs.map(b => {
-        const url = getDynamicUrl('blog', b.slug, false);
+        const url = getRelativeUrl(getDynamicUrl('blog', b.slug, false), basePath);
         return `
-        <div class="group relative flex flex-col items-start bg-white p-6 rounded-2xl border border-slate-200 hover:border-cyan-300 hover:shadow-md transition-all">
-            <h3 class="text-lg font-bold leading-6 text-slate-900 group-hover:text-cyan-600 transition-colors">
+        <div class="group relative flex flex-col items-start bg-white p-6 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all">
+            <h3 class="text-lg font-bold leading-6 text-slate-900 group-hover:text-emerald-600 transition-colors">
                 <a href="${url}">
                     <span class="absolute inset-0"></span>
                     ${b.title}
                 </a>
             </h3>
             <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">${b.excerpt}</p>
-             <div class="mt-4 text-cyan-600 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+             <div class="mt-4 text-emerald-600 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                 Read Article <i data-lucide="arrow-right" class="w-3 h-3"></i>
             </div>
         </div>
@@ -301,7 +423,7 @@ function generateRelatedArticlesHtml(product, blogs) {
     <div class="mt-16 border-t border-slate-200 pt-12">
         <div class="flex items-center justify-between mb-8">
             <h2 class="text-2xl font-bold text-slate-900">${title}</h2>
-            <a href="${getDynamicUrl('blog', '', false)}" class="text-cyan-600 text-sm font-bold hover:underline">View Blog</a>
+            <a href="${getRelativeUrl(getDynamicUrl('blog', '', false), basePath)}" class="text-emerald-600 text-sm font-bold hover:underline">View Blog</a>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             ${cards}
@@ -330,7 +452,7 @@ function generateSocialShare(product) {
     `;
 }
 
-function replaceGlobalPlaceholders(html, siteConfig) {
+function replaceGlobalPlaceholders(html, siteConfig, basePath = './') {
     let output = html;
     output = output.replace(/{{WHATSAPP}}/g, siteConfig.whatsapp || '');
     output = output.replace(/{{TELEGRAM}}/g, (siteConfig.telegram || '').replace('@', ''));
@@ -338,9 +460,28 @@ function replaceGlobalPlaceholders(html, siteConfig) {
     output = output.replace(/{{TELEGRAM_LINK}}/g, `https://t.me/${(siteConfig.telegram || '').replace('@', '')}`);
     output = output.replace(/{{SUPPORT_EMAIL}}/g, siteConfig.supportEmail || '');
     
-    // Google Analytics rendering
+    // Google Analytics & Firebase Web App SDK rendering
     let analyticsScript = '';
-    if (siteConfig.analyticsId && siteConfig.analyticsId.trim() !== '') {
+    if (siteConfig.firebaseConfig && siteConfig.firebaseConfig.apiKey) {
+        analyticsScript = `
+    <!-- Firebase SDK (v10 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "${siteConfig.firebaseConfig.apiKey}",
+        authDomain: "${siteConfig.firebaseConfig.authDomain}",
+        projectId: "${siteConfig.firebaseConfig.projectId}",
+        storageBucket: "${siteConfig.firebaseConfig.storageBucket}",
+        messagingSenderId: "${siteConfig.firebaseConfig.messagingSenderId}",
+        appId: "${siteConfig.firebaseConfig.appId}",
+        measurementId: "${siteConfig.firebaseConfig.measurementId}"
+      };
+      // Initialize Firebase
+      const app = firebase.initializeApp(firebaseConfig);
+      const analytics = firebase.analytics();
+    </script>`;
+    } else if (siteConfig.analyticsId && siteConfig.analyticsId.trim() !== '') {
         analyticsScript = `
     <script async src="https://www.googletagmanager.com/gtag/js?id=${siteConfig.analyticsId}"></script>
     <script>
@@ -353,14 +494,17 @@ function replaceGlobalPlaceholders(html, siteConfig) {
     output = output.replace(/{{ANALYTICS_SCRIPT}}/g, analyticsScript);
     output = output.replace(/{{ANALYTICS_ID}}/g, siteConfig.analyticsId || '');
     
-    output = output.replace(/{{SITE_TITLE}}/g, siteConfig.siteTitle || 'pvamarketplace');
-    output = output.replace(/{{SITE_NAME}}/g, siteConfig.siteTitle || 'pvamarketplace');
-    output = output.replace(/{{SITE_DOMAIN}}/g, (siteConfig.siteTitle || 'pvamarketplace').toLowerCase().replace(/\s+/g, '') + '.com');
+    output = output.replace(/{{SITE_TITLE}}/g, siteConfig.siteTitle || 'buysmmworld');
+    output = output.replace(/{{SITE_NAME}}/g, siteConfig.siteTitle || 'buysmmworld');
+    output = output.replace(/{{SITE_DOMAIN}}/g, (siteConfig.siteTitle || 'buysmmworld').toLowerCase().replace(/\s+/g, '') + '.com');
     output = output.replace(/{{META_DESCRIPTION}}/g, siteConfig.metaDescription || '');
-    output = output.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText || 'pvamarketplace');
+    output = output.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText || 'buysmmworld');
     output = output.replace(/{{LOGO_BADGE}}/g, siteConfig.logoBadge || '');
-    output = output.replace(/{{FAVICON_URL}}/g, siteConfig.faviconUrl || '/favicon.svg');
-    output = output.replace(/{{LOGO_URL}}/g, siteConfig.logoUrl || '/favicon.svg');
+    output = output.replace(/{{FAVICON_URL}}/g, getRelativeUrl(siteConfig.faviconUrl || '/favicon.svg', basePath));
+    output = output.replace(/{{FAVICON_URL_BASE}}/g, basePath);
+    output = output.replace(/{{LOGO_URL}}/g, getRelativeUrl(siteConfig.logoUrl || '/favicon.svg', basePath));
+    output = output.replace(/{{SITEMAP_LINK}}/g, getRelativeUrl('/sitemap.html', basePath));
+    output = output.replace(/{{DEFER_PREFIX}}/g, basePath);
     output = output.replace(/{{HERO_TITLE}}/g, siteConfig.heroTitle || '');
     output = output.replace(/{{HERO_SUBTITLE}}/g, siteConfig.heroSubtitle || '');
     output = output.replace(/{{HERO_BUTTON_TEXT}}/g, siteConfig.heroButtonText || 'Browse Our Services');
@@ -395,7 +539,7 @@ function renderStars(rating = 5, sizeClass = "w-4 h-4") {
     return html;
 }
 
-function getImageUrl(img, basePath = '/') {
+function getImageUrl(img, basePath = './') {
     if (!img) return null;
     if (img.startsWith('http') || img.startsWith('data:')) return img;
     
@@ -447,61 +591,52 @@ function computeProductColor(product) {
     return hslToHex(hue, 65, 45);
 }
 
-function renderProductCard(product, basePath = '/') {
+function renderProductCard(product, basePath = './') {
+    const pReviews = reviewsData ? reviewsData.filter(r => r.productId === product.id) : [];
+    const count = pReviews.length;
     const fullImgUrl = getImageUrl(product.image, basePath);
     const imageHtml = fullImgUrl 
         ? `<img src="${fullImgUrl}" alt="${product.image_title || product.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" width="400" height="300">`
         : '';
     const solidColor = computeProductColor(product);
-    const overlayClass = fullImgUrl ? '' : 'bg-black/0 group-hover:bg-black/0';
-    const productUrl = getDynamicUrl('product', product.slug, false);
-    const overlayTitle = (product.display_title && product.display_title.trim().length > 0)
-        ? product.display_title
-        : product.title.replace(/^Buy\s+/i, '');
-
-    const overlayLayerHtml = fullImgUrl ? '' : `<div class="absolute inset-0 ${overlayClass} transition-colors duration-300"></div>`;
+    const overlayClass = fullImgUrl ? '' : 'bg-black/10';
+    const productUrl = getRelativeUrl(getDynamicUrl('product', product.slug, false), basePath);
+    const overlayLayerHtml = `<div class="absolute inset-0 ${overlayClass} transition-colors duration-300"></div>`;
     const overlayTextHtml = fullImgUrl ? '' : `
-            <div class="absolute top-3 left-3 bg-red-500/90 backdrop-blur-md border border-white/20 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 shadow-lg z-10">
-                <span class="text-yellow-300 text-sm">Sale!</span> pvamarketplace
-            </div>
-            
-            <h3 class="text-xl font-bold leading-tight text-white mb-4 drop-shadow-lg z-10 relative">${overlayTitle}</h3>
-            
-            <a href="${productUrl}" class="bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold px-5 py-2 rounded-full mb-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all block text-center no-underline z-10">
-                GET STARTED
-            </a>
+        <h3 class="font-bold text-lg leading-tight mb-2 px-4 drop-shadow-md z-10 relative text-white select-none">${product.display_title || product.title.replace(/^Buy\s+/i, '')}</h3>
+        <div class="bg-white/10 hover:bg-white/20 text-[10px] font-bold px-4 py-1.5 rounded-full cursor-pointer transition-colors border border-white/20 z-10 text-white select-none">GET STARTED</div>
     `;
     
     return `
-    <div class="card-glow bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 group hover:-translate-y-2 hover:shadow-md" style="content-visibility: auto; contain-intrinsic-size: 0 350px;">
-        <div role="img" aria-label="${product.image_title || product.title}" class="relative p-6 h-52 flex flex-col items-center justify-center text-center overflow-hidden" style="background-color: ${solidColor};">
+    <div class="card-glow bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 group hover:-translate-y-2 hover:shadow-md" data-title="${product.title.toLowerCase()}" data-category="${product.category || ''}" style="content-visibility: auto; contain-intrinsic-size: 0 350px;">
+        <div role="img" aria-label="${product.image_title || product.title}" class="relative p-6 h-52 flex flex-col items-center justify-center text-center overflow-hidden" style="${fullImgUrl ? `background-image:url('${fullImgUrl}');background-size:cover;background-position:center;` : `background-color:${solidColor};`}">
             ${imageHtml}
             ${overlayLayerHtml}
+            <div class="absolute top-3 left-3 bg-gradient-to-r from-rose-500 to-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider z-10 shadow-sm">Popular</div>
             ${overlayTextHtml}
         </div>
         
         <div class="p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold text-cyan-600 bg-cyan-50 px-2.5 py-1 rounded uppercase tracking-wider">${product.category}</span>
-                <div class="flex items-center gap-0.5">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-0.5 text-yellow-400">
                     ${renderStars(5, "w-3 h-3")}
                 </div>
+                <span class="text-xs font-bold text-slate-500">5.0 (${count})</span>
             </div>
             
-            <a href="${productUrl}" class="font-bold text-slate-900 mb-3 text-sm hover:text-cyan-600 transition-colors block line-clamp-2 min-h-[40px]">
-                ${overlayTitle}
+            <a href="${productUrl}" class="font-bold text-slate-900 mb-2 text-sm hover:text-emerald-600 transition-colors block line-clamp-2 min-h-[40px] leading-snug">
+                ${product.title}
             </a>
             
-            <div class="flex items-center justify-between mb-5">
-                <p class="text-slate-500 text-xs">As low as</p>
-                <p class="text-slate-900 font-extrabold text-lg">
-                    $${product.min_price.toFixed(2)}
-                </p>
+            <div class="flex items-center justify-between mt-4 border-t border-slate-100 pt-3">
+                <div>
+                    <span class="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">As low as</span>
+                    <span class="text-lg font-extrabold text-slate-950">$${product.min_price.toFixed(2)}</span>
+                </div>
+                <a href="${productUrl}" class="w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-all hover:scale-110 shadow-md shadow-emerald-500/20" aria-label="View Details">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </a>
             </div>
-            
-            <a href="${productUrl}" class="block w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl py-3 text-center text-sm shadow-sm transition-all hover:shadow-md">
-                View Details
-            </a>
         </div>
     </div>`;
 }
@@ -515,7 +650,7 @@ function generateRichDescription(product) {
         <p class="mb-4">
             In the modern world of online business, having a reliable <strong>${productName}</strong> is crucial. 
             Whether you are an entrepreneur, a digital marketer, or a freelancer, verified accounts provide the stability and credibility you need. 
-            At <strong class="text-cyan-600">pvamarketplace</strong>, we provide premium, fully verified ${productName} that are ready to use. 
+            At <strong class="text-emerald-600">buysmmworld</strong>, we provide premium, fully verified ${productName} that are ready to use. 
             Our accounts are safe, secure, and come with a replacement guarantee.
         </p>
 
@@ -550,30 +685,29 @@ function generateRichDescription(product) {
 
         <h3 class="text-lg font-bold text-slate-900 mb-3 mt-8">Conclusion</h3>
         <p class="mb-4">
-            In conclusion, buying a ${productName} from pvamarketplace is a smart investment for your digital growth. 
+            In conclusion, buying a ${productName} from buysmmworld is a smart investment for your digital growth. 
             Save time, avoid hassles, and focus on scaling your business while we handle the technicalities. 
             Order your ${productName} today and experience the difference!
         </p>
     `;
 }
 
-function generateFullHeader(unused_basePath, products, categories, siteConfig) {
+function generateFullHeader(basePath, products, categories, siteConfig) {
     let header = fs.readFileSync('header_partial.html', 'utf8');
-    
-    // 1. Populate Desktop Nav
-    let desktopNavHtml = `<a href="/" class="text-slate-600 hover:text-cyan-600 hover:bg-slate-50 rounded-lg transition-colors text-sm font-medium px-4 py-2">Shop</a>`;
+      // 1. Populate Desktop Nav
+    let desktopNavHtml = `<a href="${getRelativeUrl('/', basePath)}" class="text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-colors text-sm font-medium px-4 py-2">Shop</a>`;
     
     categories.forEach(cat => {
         const catItemsHtml = cat.items.map(item => {
             const p = products.find(prod => prod.slug === item || prod.title === item || prod.image_title === item || prod.display_title === item);
-            const url = p ? getDynamicUrl('product', p.slug, false) : '#';
+            const url = p ? getRelativeUrl(getDynamicUrl('product', p.slug, false), basePath) : '#';
             const displayText = p ? (p.display_title || p.title) : item;
-            return `<a href="${url}" class="block px-4 py-2.5 text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-colors">${displayText}</a>`;
+            return `<a href="${url}" class="block px-4 py-2.5 text-sm text-slate-600 hover:text-emerald-600 hover:bg-slate-50 transition-colors">${displayText}</a>`;
         }).join('');
 
         desktopNavHtml += `
             <div class="relative group px-3 py-2">
-                <button class="text-slate-600 group-hover:text-cyan-600 text-sm font-medium flex items-center gap-1 transition-colors">
+                <button class="text-slate-600 group-hover:text-emerald-600 text-sm font-medium flex items-center gap-1 transition-colors">
                     ${cat.name} <i data-lucide="chevron-down" class="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"></i>
                 </button>
                 <div class="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl py-2 hidden group-hover:block z-50 backdrop-blur-xl max-h-96 overflow-y-auto">
@@ -584,13 +718,16 @@ function generateFullHeader(unused_basePath, products, categories, siteConfig) {
     });
 
     desktopNavHtml += `
-        <a href="${getDynamicUrl('blog', '', false)}" class="text-slate-600 hover:text-cyan-600 hover:bg-slate-50 rounded-lg transition-colors text-sm font-medium px-4 py-2">Blog</a>
+        <a href="${getRelativeUrl(getDynamicUrl('blog', '', false), basePath)}" class="text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-colors text-sm font-medium px-4 py-2">Blog</a>
     `;
 
     // 2. Populate Mobile Nav
     let mobileNavHtml = `
-        <a href="${getDynamicUrl('blog', '', false)}" class="block px-4 py-3 text-cyan-600 font-bold bg-cyan-50 border border-cyan-200 rounded-xl mb-4 hover:bg-cyan-100 transition-all">
-            <span class="flex items-center gap-2"><i data-lucide="book-open" class="w-4 h-4 text-cyan-600"></i> Blog</span>
+        <a href="${getRelativeUrl('/', basePath)}" class="block px-4 py-3 text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 rounded-xl mb-4 hover:bg-emerald-100 transition-all">
+            <span class="flex items-center gap-2"><i data-lucide="home" class="w-4 h-4 text-emerald-600"></i> Home</span>
+        </a>
+        <a href="${getRelativeUrl(getDynamicUrl('blog', '', false), basePath)}" class="block px-4 py-3 text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 rounded-xl mb-4 hover:bg-emerald-100 transition-all">
+            <span class="flex items-center gap-2"><i data-lucide="book-open" class="w-4 h-4 text-emerald-600"></i> Blog</span>
         </a>
     `;
 
@@ -599,19 +736,19 @@ function generateFullHeader(unused_basePath, products, categories, siteConfig) {
         const catSlug = cat.slug;
         const catItemsHtml = cat.items.map(item => {
             const p = products.find(prod => prod.slug === item || prod.title === item || prod.image_title === item || prod.display_title === item);
-            const url = p ? getDynamicUrl('product', p.slug, false) : '#';
+            const url = p ? getRelativeUrl(getDynamicUrl('product', p.slug, false), basePath) : '#';
             const displayText = p ? (p.display_title || p.title) : item;
-            return `<a href="${url}" class="block px-4 py-2 text-slate-600 hover:text-cyan-600 hover:bg-slate-50 rounded-lg transition-colors text-sm">${displayText}</a>`;
+            return `<a href="${url}" class="block px-4 py-2 text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg transition-colors text-sm">${displayText}</a>`;
         }).join('');
 
         mobileNavHtml += `
             <div class="mb-2">
-                <button class="mobile-cat-toggle w-full flex items-center justify-between px-4 py-3 text-slate-700 hover:text-cyan-600 hover:bg-slate-50 rounded-xl transition-all" data-cat="${catSlug}">
+                <button class="mobile-cat-toggle w-full flex items-center justify-between px-4 py-3 text-slate-700 hover:text-emerald-600 hover:bg-slate-50 rounded-xl transition-all" data-cat="${catSlug}">
                     <span class="font-bold text-sm tracking-wide uppercase">${cat.name}</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
                 </button>
                 <div id="mobile-items-${catSlug}" class="hidden space-y-1 mt-1 ml-4 border-l border-slate-200 pl-2">
-                    <a href="${getDynamicUrl('category', catSlug, false)}" class="block px-4 py-2 text-xs font-bold text-cyan-600 hover:text-cyan-500 uppercase tracking-widest">See All ${cat.name}</a>
+                    <a href="${getRelativeUrl(getDynamicUrl('category', catSlug, false), basePath)}" class="block px-4 py-2 text-xs font-bold text-emerald-600 hover:text-emerald-500 uppercase tracking-widest">See All ${cat.name}</a>
                     ${catItemsHtml}
                 </div>
             </div>
@@ -620,6 +757,7 @@ function generateFullHeader(unused_basePath, products, categories, siteConfig) {
 
     header = header.replace(/<nav[^>]*id="desktop-nav">[\s\S]*?<\/nav>/, `<nav class="desktop-nav-container items-center gap-1" id="desktop-nav">${desktopNavHtml}</nav>`);
     header = header.replace(/<div[^>]*id="mobile-nav-items">[\s\S]*?<\/div>/, `<div class="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide" id="mobile-nav-items">${mobileNavHtml}</div>`);
+    header = header.replace('href="/"', `href="${getRelativeUrl('/', basePath)}"`);
     
     // Replace site config placeholders
     header = header.replace(/{{LOGO_TEXT}}/g, siteConfig.logoText);
@@ -668,35 +806,55 @@ indexHtml = indexHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
 
 // Generate Product Grid
 const productGridHtml = products.map((p, idx) => {
-    const card = renderProductCard(p, '');
+    let card = renderProductCard(p, './');
     // Prioritize first 4 products on homepage for LCP/SI
     if (idx < 4) {
-        return card.replace('loading="lazy"', 'fetchpriority="high"').replace('width="400" height="300"', 'width="400" height="300" fetchpriority="high"');
+        card = card.replace('loading="lazy"', 'fetchpriority="high"').replace('width="400" height="300"', 'width="400" height="300" fetchpriority="high"');
+    }
+    if (idx >= 8) {
+        card = card.replace('style="content-visibility:', 'style="display: none; content-visibility:');
+        card = card.replace('class="card-glow', 'class="card-glow js-load-more-card"');
     }
     return card;
 }).join('\n');
+
+const showViewAllButton = products.length > 8;
+const viewAllButtonHtml = showViewAllButton ? `
+    <div id="view-all-products-container" class="homepage-only flex justify-center mt-12">
+        <button id="view-all-products-btn" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 hover:scale-105">
+            View All Products
+        </button>
+    </div>
+` : '';
+
 indexHtml = indexHtml.replace('{{PRODUCT_GRID}}', `
     <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         ${productGridHtml}
     </div>
+    ${viewAllButtonHtml}
 `);
 
 // Generate Footer
-indexHtml = indexHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig));
+indexHtml = indexHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig, './'));
 
 // Generate Latest Articles
-indexHtml = indexHtml.replace('{{LATEST_ARTICLES}}', generateLatestArticlesHtml(blogs));
+indexHtml = indexHtml.replace('{{LATEST_ARTICLES}}', generateLatestArticlesHtml(blogs, './'));
 
 // Inline Critical CSS
 indexHtml = indexHtml.replace(/{{CRITICAL_CSS}}/g, `<style>${cssContent}</style>`);
 
 // Preload first 2 product images for LCP
-const homepagePreload = products.slice(0, 2).map(p => `<link rel="preload" href="${getImageUrl(p.image)}" as="image" fetchpriority="high">`).join('');
+const homepagePreload = products.slice(0, 2).map(p => {
+    const url = getImageUrl(p.image, './');
+    return url ? `<link rel="preload" href="${url}" as="image" fetchpriority="high">` : '';
+}).filter(Boolean).join('');
 indexHtml = indexHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', homepagePreload);
 
 // Global Placeholders
-indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://pvamarketplace.com/');
-indexHtml = replaceGlobalPlaceholders(indexHtml, siteConfig);
+indexHtml = indexHtml.replace(/{{CANONICAL_URL}}/g, 'https://buysmmworld.com/');
+indexHtml = indexHtml.replace('{{SECTION_TITLE}}', 'Most Popular Accounts');
+indexHtml = indexHtml.replace('{{SECTION_SUBTITLE}}', '<span class="w-8 h-px bg-emerald-200"></span> Best Selling');
+indexHtml = replaceGlobalPlaceholders(indexHtml, siteConfig, './');
 
 // Save Homepage
 fs.writeFileSync('index.html', indexHtml);
@@ -711,7 +869,7 @@ sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
 // Add Homepage to Sitemap
 sitemap += '  <url>\n';
-sitemap += '    <loc>https://pvamarketplace.com/</loc>\n';
+sitemap += '    <loc>https://buysmmworld.com/</loc>\n';
 sitemap += '    <lastmod>' + new Date().toISOString().split('T')[0] + '</lastmod>\n';
 sitemap += '    <priority>1.0</priority>\n';
 sitemap += '  </url>\n';
@@ -736,14 +894,17 @@ uniqueCategories.forEach(cat => {
     catHtml = catHtml.replace('{{HEADER}}', generateFullHeader('../../', products, categories, siteConfig));
     
     // SEO & Hero
-    const catTitle = `${cat} Accounts & Reviews | pvamarketplace`;
+    const catTitle = `${cat} Accounts & Reviews | buysmmworld`;
     
     // Replace Category Options
     catHtml = catHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
 
     // Replace Hero with Category Title
-    catHtml = catHtml.replace('{{HERO_TITLE}}', `<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">${cat}</span> Services`);
+    catHtml = catHtml.replace('{{HERO_TITLE}}', `<span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">${cat}</span> Services`);
     catHtml = catHtml.replace('{{HERO_SUBTITLE}}', catDescription);
+    catHtml = catHtml.replace('{{SECTION_TITLE}}', `${cat} Packages`);
+    catHtml = catHtml.replace('{{SECTION_SUBTITLE}}', `<span class="w-8 h-px bg-emerald-200"></span> ${cat} Services`);
+    catHtml = catHtml.replace(/homepage-only/g, 'hidden');
     
     // Override Global SEO for Category
     catHtml = catHtml.replace(/{{SITE_TITLE}}/g, catTitle);
@@ -769,7 +930,7 @@ uniqueCategories.forEach(cat => {
             ${richContent}
         </div>
         <div class="max-w-7xl mx-auto px-4 mb-8">
-            <h3 class="text-2xl font-bold text-slate-900 border-l-4 border-cyan-500 pl-4">Available Packages</h3>
+            <h3 class="text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Available Packages</h3>
         </div>
         <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             ${catGrid}
@@ -779,10 +940,10 @@ uniqueCategories.forEach(cat => {
     catHtml = catHtml.replace('{{PRODUCT_GRID}}', contentAndGrid);
     
     // Latest Articles
-    catHtml = catHtml.replace('{{LATEST_ARTICLES}}', generateLatestArticlesHtml(blogs));
+    catHtml = catHtml.replace('{{LATEST_ARTICLES}}', generateLatestArticlesHtml(blogs, '../../'));
     
     // Footer
-    catHtml = catHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig).replace(new RegExp(`href="/${paths.product}`, 'g'), `href="../../${paths.product}`).replace(/href="#"/g, 'href="../../"'));
+    catHtml = catHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig, '../../'));
 
     // CSS
     catHtml = catHtml.replace(/{{CRITICAL_CSS}}/g, `<style>${cssContent}</style>`);
@@ -790,7 +951,7 @@ uniqueCategories.forEach(cat => {
     // Preload first 2 product images for LCP
     const catPreload = catProducts.slice(0, 2)
         .map(p => {
-            const url = getImageUrl(p.image);
+            const url = getImageUrl(p.image, '../../');
             return url ? `<link rel="preload" href="${url}" as="image" fetchpriority="high">` : '';
         })
         .filter(Boolean)
@@ -798,7 +959,7 @@ uniqueCategories.forEach(cat => {
     catHtml = catHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', catPreload);
 
     // Global Placeholders
-    catHtml = replaceGlobalPlaceholders(catHtml, siteConfig);
+    catHtml = replaceGlobalPlaceholders(catHtml, siteConfig, '../../');
 
     fs.writeFileSync(path.join(dir, 'index.html'), minifyHTML(catHtml));
 
@@ -821,14 +982,14 @@ const postsPerPage = 6;
 const totalPages = Math.ceil(blogs.length / postsPerPage);
 
 // Helper: Generate Sidebar
-function generateSidebar(products, blogs) {
+function generateSidebar(products, blogs, basePath = '../../') {
     const popularBlogs = blogs.slice(0, 3).map(b => `
         <li class="flex gap-3 items-start">
              <div class="w-16 h-16 bg-slate-200 rounded-lg overflow-hidden shrink-0">
-                <img src="${getImageUrl(b.image, '../../')}" alt="${b.title}" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition">
+                <img src="${getImageUrl(b.image, basePath)}" alt="${b.title}" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition">
              </div>
              <div>
-                 <a href="${getDynamicUrl('blog', b.slug, false)}" class="text-sm font-bold text-slate-900 hover:text-cyan-600 leading-tight block mb-1">${b.title}</a>
+                 <a href="${getRelativeUrl(getDynamicUrl('blog', b.slug, false), basePath)}" class="text-sm font-bold text-slate-900 hover:text-emerald-600 leading-tight block mb-1">${b.title}</a>
                  <span class="text-xs text-slate-500">${b.date}</span>
              </div>
         </li>
@@ -836,12 +997,12 @@ function generateSidebar(products, blogs) {
 
     const bestSellers = products.filter(p => p.is_sale).slice(0, 3).map(p => `
         <li class="flex items-center gap-3 border-b border-slate-200 pb-3 last:border-0 last:pb-0">
-             <div class="w-10 h-10 bg-gradient-to-br ${gradients[p.badge_color] || gradients.blue} rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+             <div class="w-10 h-10 bg-gradient-to-br ${gradients[p.badge_color] || gradients.green} rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
                 ${p.category.substring(0,2).toUpperCase()}
              </div>
              <div>
-                 <a href="${getDynamicUrl('product', p.slug, false)}" class="text-sm font-bold text-slate-900 hover:text-cyan-600 block">${p.title}</a>
-                 <span class="text-xs font-bold text-cyan-600">$${p.min_price}</span>
+                 <a href="${getRelativeUrl(getDynamicUrl('product', p.slug, false), basePath)}" class="text-sm font-bold text-slate-900 hover:text-emerald-600 block">${p.title}</a>
+                 <span class="text-xs font-bold text-emerald-600">$${p.min_price}</span>
              </div>
         </li>
     `).join('');
@@ -864,10 +1025,10 @@ function generateSidebar(products, blogs) {
         </div>
 
         <!-- CTA Box -->
-        <div class="bg-gradient-to-br from-cyan-600 to-blue-700 p-6 rounded-xl text-center shadow-md">
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 p-6 rounded-xl text-center shadow-md">
             <h3 class="font-bold text-white mb-2 text-lg">Need Verified Accounts?</h3>
             <p class="text-white/90 text-sm mb-6">Get premium, phone-verified accounts for Google, Facebook, and more instantly.</p>
-            <a href="/" class="block bg-white text-blue-700 font-bold py-3 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+            <a href="${getRelativeUrl('/', basePath)}" class="block bg-white text-emerald-700 font-bold py-3 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
                 View All Products
             </a>
         </div>
@@ -875,15 +1036,15 @@ function generateSidebar(products, blogs) {
 }
 
 // Helper: Inject CTA (Replaces [[CTA1]] and [[CTA2]])
-function injectCTA(content, post) {
+function injectCTA(content, post, basePath = '../../') {
     const generateHTML = (text, link) => `
-        <div class="my-10 bg-gradient-to-r from-slate-50 to-slate-100 border-l-4 border-cyan-500 p-6 rounded-r-xl shadow-sm">
+        <div class="my-10 bg-gradient-to-r from-slate-50 to-slate-100 border-l-4 border-emerald-500 p-6 rounded-r-xl shadow-sm">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="text-center sm:text-left">
                     <h4 class="text-lg font-bold text-slate-900 mb-1">Looking for verified accounts?</h4>
                     <p class="text-slate-600 text-sm">${text || "Get Verified PVA Accounts Now"}</p>
                 </div>
-                <a href="${link || "/"}" class="shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 px-6 rounded-lg transition-all shadow-sm whitespace-nowrap">
+                <a href="${getRelativeUrl(link || "/", basePath)}" class="shrink-0 bg-emerald-600 hover:bg-emerald-500 font-bold py-2.5 px-6 rounded-lg transition-all shadow-sm whitespace-nowrap" style="color: #ffffff !important; text-decoration: none !important;">
                     Check Availability &rarr;
                 </a>
             </div>
@@ -918,7 +1079,7 @@ function injectCTA(content, post) {
 }
 
 // Helper: Internal link 41 products across 5 blogs
-function distributeProductsToBlog(content, products, blogIndex, totalBlogs) {
+function distributeProductsToBlog(content, products, blogIndex, totalBlogs, basePath = '../../') {
     // 1. Auto-link product titles found in text
     let processedContent = content;
     const sortedProducts = [...products].sort((a, b) => b.title.length - a.title.length);
@@ -928,8 +1089,8 @@ function distributeProductsToBlog(content, products, blogIndex, totalBlogs) {
         // Improved Regex: Avoids linking inside existing <a> tags or HTML attributes (like alt, title, src)
         // Matches the title only if it's not preceded by = " or ' (attributes) or inside <a> tags
         const regex = new RegExp(`(?<![="'>])\\b(${escapedTitle})\\b(?![^<]*>|[^<]*<\\/a>)`, 'gi');
-        const url = getDynamicUrl('product', product.slug, false);
-        processedContent = processedContent.replace(regex, `<a href="${url}" class="text-cyan-600 font-bold hover:underline">$1</a>`);
+        const url = getRelativeUrl(getDynamicUrl('product', product.slug, false), basePath);
+        processedContent = processedContent.replace(regex, `<a href="${url}" class="text-emerald-600 font-bold hover:underline">$1</a>`);
     });
 
     // 2. Append assigned subset of products at the bottom
@@ -941,25 +1102,25 @@ function distributeProductsToBlog(content, products, blogIndex, totalBlogs) {
     if (assignedProducts.length > 0) {
         let productsHtml = `
             <div class="mt-16 p-8 bg-white rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-100/50 rounded-full blur-3xl"></div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-100/50 rounded-full blur-3xl"></div>
                 <h3 class="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center shadow-sm">
-                        <i data-lucide="shopping-bag" class="w-4 h-4 text-cyan-600"></i>
+                    <span class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shadow-sm">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-600"></i>
                     </span>
-                    Our <span class="text-cyan-600">Featured Services</span>
+                    Our <span class="text-emerald-600">Featured Services</span>
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         `;
         
         assignedProducts.forEach(p => {
-            const url = getDynamicUrl('product', p.slug, false);
+            const url = getRelativeUrl(getDynamicUrl('product', p.slug, false), basePath);
             productsHtml += `
-                <a href="${url}" class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group hover:border-cyan-300">
-                    <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 group-hover:bg-cyan-600 group-hover:text-white transition-all duration-300">
+                <a href="${url}" class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all border border-slate-100 group hover:border-emerald-300">
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 group-hover:scale-110">
                         <i data-lucide="star" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-slate-900 group-hover:text-cyan-600 transition-colors leading-tight">${p.title}</p>
+                        <p class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors leading-tight">${p.title}</p>
                         <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-semibold">Available Now</p>
                     </div>
                 </a>
@@ -970,7 +1131,7 @@ function distributeProductsToBlog(content, products, blogIndex, totalBlogs) {
                 </div>
                 <div class="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <p class="text-slate-500 text-sm italic">Trusted by 5,000+ happy customers worldwide.</p>
-                    <a href="/" class="group px-6 py-2.5 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-sm">
+                    <a href="${getRelativeUrl('/', basePath)}" class="group px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-sm">
                         Explore All 41 Services <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
                     </a>
                 </div>
@@ -1005,15 +1166,20 @@ for (let i = 1; i <= totalPages; i++) {
     blogListHtml = blogListHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
 
     const pageTitleSuffix = i > 1 ? ` - Page ${i}` : '';
-    const blogTitle = `pvamarketplace Blog – Digital Marketing Tips${pageTitleSuffix}`;
+    const blogTitle = `buysmmworld Blog – Digital Marketing Tips${pageTitleSuffix}`;
     const blogDesc = 'Unlock the secrets of digital marketing. Expert strategies, safety tips, and growth hacks for your business.';
 
     // Enhanced Hero for Blog
+    blogListHtml = blogListHtml.replace('<section class="hero-section-bg', '<section class="blog-hero-section-bg');
+    blogListHtml = blogListHtml.replace('<div class="hero-overlay"></div>', '<div class="blog-hero-overlay"></div>');
     blogListHtml = blogListHtml.replace('{{HERO_TITLE}}', `
-        <span class="block text-cyan-600 text-lg font-bold tracking-widest uppercase mb-4">Our Blog</span>
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 drop-shadow-sm">Latest Insights & Guides</span>${pageTitleSuffix}
+        <span class="block text-emerald-400 text-lg font-bold tracking-widest uppercase mb-4">Our Blog</span>
+        <span class="text-white drop-shadow-sm">Latest Insights &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Guides</span></span>${pageTitleSuffix}
     `);
     blogListHtml = blogListHtml.replace('{{HERO_SUBTITLE}}', blogDesc);
+    blogListHtml = blogListHtml.replace('{{SECTION_TITLE}}', 'Latest Articles');
+    blogListHtml = blogListHtml.replace('{{SECTION_SUBTITLE}}', `<span class="w-8 h-px bg-emerald-200"></span> Our Guides`);
+    blogListHtml = blogListHtml.replace(/homepage-only/g, 'hidden');
     
     // Override Global SEO for Blog
     blogListHtml = blogListHtml.replace(/{{SITE_TITLE}}/g, blogTitle);
@@ -1025,27 +1191,27 @@ for (let i = 1; i <= totalPages; i++) {
     
     // Redesigned Eye-Catching Grid Layout
     const blogGrid = pageBlogs.map((b, idx) => `
-        <article class="group relative flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all duration-500 hover:border-cyan-300 hover:shadow-md hover:-translate-y-2 h-full">
-            <a href="${getDynamicUrl('blog', b.slug).replace(baseUrl, '/')}" class="h-64 overflow-hidden relative block">
+        <article class="group relative flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all duration-500 hover:border-emerald-300 hover:shadow-md hover:-translate-y-2 h-full">
+            <a href="${getRelativeUrl(getDynamicUrl('blog', b.slug, false), pageRelPath)}" class="h-64 overflow-hidden relative block">
                 <img src="${getImageUrl(b.image, pageRelPath) || 'https://via.placeholder.com/600x400?text=No+Image'}" alt="${b.title}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" ${i === 1 && idx === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} width="600" height="400">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80"></div>
                 
                 <!-- Floating Date Badge -->
                 <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold text-slate-900 flex items-center gap-2 shadow-sm">
-                    <i data-lucide="calendar" class="w-3 h-3 text-cyan-600"></i> ${b.date}
+                    <i data-lucide="calendar" class="w-3 h-3 text-emerald-600"></i> ${b.date}
                 </div>
             </a>
             
             <div class="p-8 flex-1 flex flex-col relative">
                 <!-- Decorative Glow -->
-                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-cyan-100/50 rounded-full blur-3xl group-hover:bg-cyan-200/50 transition-all"></div>
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-emerald-100/50 rounded-full blur-3xl group-hover:bg-emerald-200/50 transition-all"></div>
 
                 <div class="mb-4">
-                    <span class="text-xs font-bold text-cyan-700 tracking-widest uppercase border border-cyan-200 bg-cyan-50 px-2 py-1 rounded">Article</span>
+                    <span class="text-xs font-bold text-emerald-700 tracking-widest uppercase border border-emerald-200 bg-emerald-50 px-2 py-1 rounded">Article</span>
                 </div>
 
-                <h3 class="text-2xl font-bold text-slate-900 mb-4 leading-tight group-hover:text-cyan-600 transition-all">
-                    <a href="${getDynamicUrl('blog', b.slug).replace(baseUrl, '/')}">
+                <h3 class="text-2xl font-bold text-slate-900 mb-4 leading-tight group-hover:text-emerald-600 transition-all">
+                    <a href="${getRelativeUrl(getDynamicUrl('blog', b.slug, false), pageRelPath)}">
                         <span class="absolute inset-0"></span>
                         ${b.title}
                     </a>
@@ -1053,9 +1219,9 @@ for (let i = 1; i <= totalPages; i++) {
                 
                 <p class="text-slate-600 text-sm mb-8 line-clamp-3 leading-relaxed flex-1 group-hover:text-slate-700 transition-colors">${b.excerpt}</p>
                 
-                <div class="flex items-center justify-between mt-auto pt-6 border-t border-slate-100 group-hover:border-cyan-100 transition-colors">
-                    <span class="text-sm font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">Read Article</span>
-                    <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-cyan-600 group-hover:text-white transition-all duration-300 group-hover:scale-110">
+                <div class="flex items-center justify-between mt-auto pt-6 border-t border-slate-100 group-hover:border-emerald-100 transition-colors">
+                    <span class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Read Article</span>
+                    <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 group-hover:scale-110">
                         <i data-lucide="arrow-right" class="w-5 h-5"></i>
                     </div>
                 </div>
@@ -1067,15 +1233,16 @@ for (let i = 1; i <= totalPages; i++) {
     let paginationHtml = '<div class="flex justify-center items-center gap-2 mt-12">';
     if (i > 1) {
         const prevLink = i === 2 ? `/${paths.blog}/` : `/${paths.blog}/page/${i-1}/`;
-        paginationHtml += `<a href="${prevLink}" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-cyan-600 hover:text-white transition font-bold text-sm">Previous</a>`;
+        paginationHtml += `<a href="${getRelativeUrl(prevLink, pageRelPath)}" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-emerald-600 hover:text-white transition font-bold text-sm">Previous</a>`;
     }
     for (let p = 1; p <= totalPages; p++) {
-        const activeClass = p === i ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+        const activeClass = p === i ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
         const link = p === 1 ? `/${paths.blog}/` : `/${paths.blog}/page/${p}/`;
-        paginationHtml += `<a href="${link}" class="w-10 h-10 flex items-center justify-center rounded-lg ${activeClass} font-bold text-sm transition">${p}</a>`;
+        paginationHtml += `<a href="${getRelativeUrl(link, pageRelPath)}" class="w-10 h-10 flex items-center justify-center rounded-lg ${activeClass} font-bold text-sm transition">${p}</a>`;
     }
     if (i < totalPages) {
-        paginationHtml += `<a href="/${paths.blog}/page/${i+1}/" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-cyan-600 hover:text-white transition font-bold text-sm">Next</a>`;
+        const nextLink = `/${paths.blog}/page/${i+1}/`;
+        paginationHtml += `<a href="${getRelativeUrl(nextLink, pageRelPath)}" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-emerald-600 hover:text-white transition font-bold text-sm">Next</a>`;
     }
     paginationHtml += '</div>';
 
@@ -1085,15 +1252,16 @@ for (let i = 1; i <= totalPages; i++) {
         </div>
         ${paginationHtml}
     `);
+    blogListHtml = blogListHtml.replace('hidden sm:flex', 'hidden');
     blogListHtml = blogListHtml.replace('{{LATEST_ARTICLES}}', ''); 
     blogListHtml = blogListHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', '');
 
     // Footer & Links
-    blogListHtml = blogListHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig));
+    blogListHtml = blogListHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig, pageRelPath));
     blogListHtml = blogListHtml.replace(/{{CRITICAL_CSS}}/g, `<style>${cssContent}</style>`);
     
     // Global Placeholders
-    blogListHtml = replaceGlobalPlaceholders(blogListHtml, siteConfig);
+    blogListHtml = replaceGlobalPlaceholders(blogListHtml, siteConfig, pageRelPath);
 
     fs.writeFileSync(path.join(pageDir, 'index.html'), minifyHTML(blogListHtml));
 }
@@ -1110,25 +1278,35 @@ blogs.forEach((post, index) => {
     const dir = path.join(paths.blog, post.slug);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const sidebarHtml = generateSidebar(products, blogs);
+    const sidebarHtml = generateSidebar(products, blogs, '../../');
     // Modified to pass full post object for double CTA replacement
-    let contentWithCta = injectCTA(post.content, post);
+    let contentWithCta = injectCTA(post.content, post, '../../');
     
     // Internal link products (distribute 41 products across 5 blogs)
-    contentWithCta = distributeProductsToBlog(contentWithCta, products, index, blogs.length);
+    contentWithCta = distributeProductsToBlog(contentWithCta, products, index, blogs.length, '../../');
     
     // Related Articles (Trust Section)
-    const relatedHtml = generateRelatedArticlesHtml({ id: -1, category: 'General' }, blogs.filter(b => b.id !== post.id)); // Fallback related
+    const relatedHtml = generateRelatedArticlesHtml({ id: -1, category: 'General' }, blogs.filter(b => b.id !== post.id), '../../'); // Fallback related
 
     const blogPageHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${post.title} - pvamarketplace</title>
+    <title>${post.title} - buysmmworld</title>
     <meta name="description" content="${post.excerpt}">
+    <link rel="icon" type="image/png" href="{{FAVICON_URL}}" sizes="any">
     <link rel="canonical" href="${getDynamicUrl('blog', post.slug)}" />
     <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="${post.title} - buysmmworld" />
+    <meta property="og:description" content="${post.excerpt}" />
+    <meta property="og:url" content="${getDynamicUrl('blog', post.slug)}" />
+    <meta property="og:image" content="${post.image ? getDynamicUrl('home') + String(post.image).replace('./', '') : getDynamicUrl('home') + 'favicon.png'}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${post.title} - buysmmworld" />
+    <meta name="twitter:description" content="${post.excerpt}" />
+    <meta name="twitter:image" content="${post.image ? getDynamicUrl('home') + String(post.image).replace('./', '') : getDynamicUrl('home') + 'favicon.png'}" />
     <style>${cssContent}</style>
     <style>
         /* Robust Navigation Visibility */
@@ -1139,8 +1317,51 @@ blogs.forEach((post, index) => {
             .desktop-nav-container { display: flex !important; }
             .mobile-menu-btn-container { display: none !important; }
         }
+        /* Custom Premium Dark Footer Styles */
+        .site-footer {
+            background-color: #0b0f19 !important;
+            border-top: 1px solid #1e293b !important;
+        }
+        .site-footer h4 {
+            color: #f1f5f9 !important;
+        }
+        .site-footer p {
+            color: #94a3b8 !important;
+        }
+        .site-footer a {
+            color: #94a3b8 !important;
+        }
+        .site-footer a:hover {
+            color: #22d3ee !important;
+        }
+        .site-footer .border-t {
+            border-color: #1e293b !important;
+        }
+        .site-footer .text-slate-500 {
+            color: #94a3b8 !important;
+        }
+        .site-footer .text-slate-600 {
+            color: #94a3b8 !important;
+        }
+        /* Dropdown Robustness */
+        .desktop-nav-container .group:hover .group-hover\\:block {
+            display: block !important;
+        }
+        .desktop-nav-container .group .absolute {
+            z-index: 100 !important;
+            pointer-events: auto !important;
+        }
+        /* Bridge the gap between button and dropdown to prevent flickering */
+        .desktop-nav-container .group .absolute::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: transparent;
+        }
     </style>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest" defer></script>
 </head>
 <body class="bg-slate-50 text-slate-700 font-sans antialiased">
@@ -1152,27 +1373,27 @@ blogs.forEach((post, index) => {
     <main class="max-w-7xl mx-auto px-4 py-8">
         <!-- Breadcrumb -->
         <nav class="flex text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap">
-            <a href="/" class="hover:text-cyan-600">Home</a>
+            <a href="${getRelativeUrl('/', '../../')}" class="hover:text-emerald-600">Home</a>
             <span class="mx-2">/</span>
-            <a href="/${paths.blog}/" class="hover:text-cyan-600">Blog</a>
+            <a href="${getRelativeUrl('/' + paths.blog + '/', '../../')}" class="hover:text-emerald-600">Blog</a>
             <span class="mx-2">/</span>
-            <span class="text-cyan-600 truncate">${post.title}</span>
+            <span class="text-emerald-600 truncate">${post.title}</span>
         </nav>
 
         <div class="flex flex-col lg:flex-row gap-12">
             <!-- Main Content (70%) -->
             <article class="lg:w-[70%]">
                 <header class="mb-8">
-                    <span class="text-cyan-600 font-bold tracking-wider text-sm uppercase mb-3 block">${post.date}</span>
+                    <span class="text-emerald-600 font-bold tracking-wider text-sm uppercase mb-3 block">${post.date}</span>
                     <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">${post.title}</h1>
-                    <p class="text-xl text-slate-600 leading-relaxed border-l-4 border-cyan-500 pl-4 italic">
+                    <p class="text-xl text-slate-600 leading-relaxed border-l-4 border-emerald-500 pl-4 italic">
                         ${post.excerpt}
                     </p>
                 </header>
 
-                ${post.image ? `<img src="${getImageUrl(post.image, '../../')}" alt="${post.title}" class="w-full rounded-2xl mb-10 shadow-md border border-slate-200" fetchpriority="high" width="1200" height="630">` : ''}
+                ${post.image ? `<div class="w-full aspect-[4/3] rounded-2xl mb-10 shadow-md border border-slate-200 overflow-hidden"><img src="${getImageUrl(post.image, '../../')}" alt="${post.title}" class="w-full h-full object-cover" fetchpriority="high" width="1200" height="900"></div>` : ''}
 
-                <div class="prose lg:prose-xl max-w-none prose-headings:text-slate-900 prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900">
+                <div class="prose lg:prose-xl max-w-none prose-headings:text-slate-900 prose-a:text-emerald-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900">
                     ${contentWithCta}
                 </div>
 
@@ -1180,7 +1401,7 @@ blogs.forEach((post, index) => {
                 ${relatedHtml}
 
                 <div class="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center">
-                    <a href="/${paths.blog}/" class="font-bold text-slate-500 hover:text-slate-900 flex items-center gap-2">
+                    <a href="${getRelativeUrl('/' + paths.blog + '/', '../../')}" class="font-bold text-slate-500 hover:text-slate-900 flex items-center gap-2">
                         <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Blog
                     </a>
                 </div>
@@ -1193,8 +1414,8 @@ blogs.forEach((post, index) => {
         </div>
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-6 mt-12">
-        ${generateFooter(products, siteConfig).replace(new RegExp(`href="/${paths.product}`, 'g'), `href="../../${paths.product}`).replace(/href="#"/g, 'href="../../"')}
+    <footer class="site-footer bg-[#0b0f19] border-t border-slate-800 py-12 mt-12">
+        ${generateFooter(products, siteConfig, '../../')}
     </footer>
 
     <!-- Scripts -->
@@ -1214,7 +1435,7 @@ blogs.forEach((post, index) => {
     let finalBlogPageHtml = blogPageHtml;
     
     // Global Placeholders
-    finalBlogPageHtml = replaceGlobalPlaceholders(finalBlogPageHtml, siteConfig);
+    finalBlogPageHtml = replaceGlobalPlaceholders(finalBlogPageHtml, siteConfig, '../../');
 
     fs.writeFileSync(path.join(dir, 'index.html'), minifyHTML(finalBlogPageHtml));
 
@@ -1245,10 +1466,10 @@ products.forEach(product => {
     const slug = product.slug.trim().replace(/^\/+|\/+$/g, ''); 
     const solidColor = computeProductColor(product);
     const featuresList = product.features.map(f => 
-        `<li class="flex items-start gap-2 text-slate-300 text-sm"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400 mt-0.5 shrink-0"></i> ${f}</li>`
+        `<li class="flex items-start gap-2 text-slate-300 text-sm"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i> ${f}</li>`
     ).join('');
     const bottomFeaturesList = product.features.map(f => 
-        `<li class="flex items-start gap-2 text-slate-400 text-sm"><i data-lucide="check" class="w-4 h-4 text-cyan-500 mt-0.5 shrink-0"></i> ${f}</li>`
+        `<li class="flex items-start gap-2 text-slate-400 text-sm"><i data-lucide="check" class="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"></i> ${f}</li>`
     ).join('');
     
     let pricingOptions = '<option selected disabled>Choose an option</option>';
@@ -1267,7 +1488,7 @@ products.forEach(product => {
     const relatedHtml = related.map(p => {
         const relColor = computeProductColor(p);
         const relSlug = p.slug.replace(/^\/+|\/+$/g, '');
-        const relUrl = getDynamicUrl('product', relSlug, false);
+        const relUrl = getRelativeUrl(getDynamicUrl('product', relSlug, false), '../../');
         const relImgUrl = getImageUrl(p.image, '../../');
         const relImgHtml = relImgUrl 
             ? `<img src="${relImgUrl}" alt="${p.image_title || p.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" width="400" height="300">`
@@ -1276,7 +1497,7 @@ products.forEach(product => {
         const relOverlayLayerHtml = relImgUrl ? '' : `<div class="absolute inset-0 ${relOverlayClass} transition-colors duration-300"></div>`;
         const relOverlayTextHtml = relImgUrl ? '' : `
                     <div class="absolute top-2 left-2 bg-red-500/90 backdrop-blur-md border border-white/10 text-xs font-bold px-3 py-1 rounded flex gap-1 z-10">
-                        <span class="text-yellow-300 text-sm">Sale!</span> pvamarketplace
+                        <span class="text-yellow-300 text-sm">Sale!</span> buysmmworld
                     </div>
                     <h3 class="font-bold text-lg leading-tight mb-2 px-2 drop-shadow-md z-10 relative text-white">${p.display_title || p.title.replace(/^Buy\s+/i, '')}</h3>
                     <div class="bg-white/10 hover:bg-white/20 text-xs font-bold px-4 py-1.5 rounded-full cursor-pointer transition-colors border border-white/20 z-10 text-white">GET STARTED</div>
@@ -1290,13 +1511,13 @@ products.forEach(product => {
                     ${relOverlayTextHtml}
                 </div>
                 <div class="p-4">
-                    <p class="text-[10px] font-bold text-cyan-600 uppercase tracking-wider mb-1">${p.category}</p>
-                    <a href="${relUrl}" class="font-bold text-slate-900 text-sm mb-2 block hover:text-cyan-600 transition-colors truncate">${p.title}</a>
+                    <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">${p.category}</p>
+                    <a href="${relUrl}" class="font-bold text-slate-900 text-sm mb-2 block hover:text-emerald-600 transition-colors truncate">${p.title}</a>
                     <div class="flex gap-0.5 mb-3">
                         ${renderStars(5, "w-3 h-3")} 
                     </div>
                     <div class="text-slate-900 text-sm mb-4 font-extrabold">$${p.min_price.toFixed(2)} - $${p.max_price.toFixed(2)}</div>
-                    <a href="${relUrl}" class="block w-full bg-slate-50 hover:bg-cyan-600 text-slate-700 hover:text-white text-center py-3.5 rounded-lg text-sm font-bold transition-all border border-slate-200 hover:border-cyan-500">View Details</a>
+                    <a href="${relUrl}" class="block w-full bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white text-center py-3.5 rounded-lg text-sm font-bold transition-all border border-slate-200 hover:border-emerald-500">View Details</a>
                 </div>
             </div>`;
     }).join('');
@@ -1308,10 +1529,10 @@ products.forEach(product => {
         reviewsHtml = '<div class="text-center py-10 bg-slate-50 rounded-xl border border-slate-200"><p class="text-slate-500 mb-2">No reviews yet.</p><p class="text-sm text-slate-600">Be the first to write a review!</p></div>';
     } else {
         reviewsHtml = pReviews.map(r => `
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:border-cyan-300 transition-all duration-300 hover:shadow-lg group shadow-sm">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-all duration-300 hover:shadow-lg group shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-black text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform duration-300">
+                        <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-black text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform duration-300">
                             ${r.avatar || (r.user ? r.user.charAt(0).toUpperCase() : 'U')}
                         </div>
                         <div>
@@ -1319,7 +1540,7 @@ products.forEach(product => {
                             <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
                                 <span>${r.date}</span>
                                 ${r.verified !== false ? `
-                                <span class="text-cyan-700 flex items-center gap-1 bg-cyan-50 px-2 py-0.5 rounded-full text-[10px] border border-cyan-200">
+                                <span class="text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px] border border-emerald-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-check w-3 h-3"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.78 4.78 4 4 0 0 1-6.74 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.74Z"/><path d="m9 12 2 2 4-4"/></svg> Verified Buyer
                                 </span>` : ''}
                             </div>
@@ -1329,7 +1550,7 @@ products.forEach(product => {
                         ${renderStars(r.rating, "w-3 h-3")}
                     </div>
                 </div>
-                ${r.title ? `<h5 class="text-slate-900 font-bold text-base mb-2 group-hover:text-cyan-600 transition-colors">${r.title}</h5>` : ''}
+                ${r.title ? `<h5 class="text-slate-900 font-bold text-base mb-2 group-hover:text-emerald-600 transition-colors">${r.title}</h5>` : ''}
                 <p class="text-slate-600 text-sm leading-relaxed opacity-90 group-hover:opacity-100 transition-opacity">${r.text}</p>
             </div>
         `).join('');
@@ -1342,7 +1563,7 @@ products.forEach(product => {
         "name": product.title,
         "description": product.meta_description || product.short_description,
         "sku": String(product.id),
-        "brand": { "@type": "Brand", "name": "pvamarketplace" },
+        "brand": { "@type": "Brand", "name": "buysmmworld" },
         "offers": {
             "@type": "AggregateOffer",
             "priceCurrency": "USD",
@@ -1364,12 +1585,12 @@ products.forEach(product => {
     html = html.replace('{{HEADER}}', generateFullHeader('../../', products, categories, siteConfig));
 
     // SEO
-    const seoTitle = `${product.title} – Verified & Fast | pvamarketplace`;
+    const seoTitle = `${product.title} – Verified & Fast | buysmmworld`;
     let seoDesc = product.meta_description || product.short_description || `Buy ${product.title} instantly.`;
     
     // Ensure Description Length (120-160 chars)
     if (seoDesc.length < 120) {
-        seoDesc += " Get high-quality verified accounts instantly at pvamarketplace. Secure, fast, and reliable service with 24/7 support.";
+        seoDesc += " Get high-quality verified accounts instantly at buysmmworld. Secure, fast, and reliable service with 24/7 support.";
     }
     if (seoDesc.length > 160) {
         seoDesc = seoDesc.substring(0, 157) + "...";
@@ -1384,9 +1605,11 @@ products.forEach(product => {
         <meta property="og:description" content="${seoDesc}" />
         <meta property="og:url" content="${getDynamicUrl('product', slug)}" />
         <meta property="og:type" content="product" />
+        <meta property="og:image" content="${product.image ? getDynamicUrl('home') + product.image.replace(/^\.\//,'') : getDynamicUrl('home') + 'favicon.png'}" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="${seoTitle}" />
         <meta name="twitter:description" content="${seoDesc}" />
+        <meta name="twitter:image" content="${product.image ? getDynamicUrl('home') + product.image.replace(/^\.\//,'') : getDynamicUrl('home') + 'favicon.png'}" />
     `);
     html = html.replace('{{JSON_LD}}', `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`);
 
@@ -1410,6 +1633,9 @@ products.forEach(product => {
     html = html.replace(/{{CATEGORY}}/g, product.category);
     html = html.replace(/{{CATEGORY_SLUG}}/g, catSlug);
     
+    html = html.replace(/{{HOME_LINK}}/g, getRelativeUrl('/', '../../'));
+    html = html.replace(/{{CATEGORY_LINK}}/g, getRelativeUrl(getDynamicUrl('category', catSlug, false), '../../'));
+
     html = html.replace(/{{PRODUCT_TITLE}}/g, product.title);
     html = html.replace(/{{DISPLAY_TITLE}}/g, product.display_title || product.title.replace(/^Buy\s+/i, ''));
     html = html.replace(/{{IMAGE_TITLE}}/g, product.image_title || product.title);
@@ -1425,18 +1651,18 @@ products.forEach(product => {
     html = html.replace('{{SUMMARY_STARS}}', renderStars(5, "w-5 h-5"));
     html = html.replace('{{REVIEWS_LIST}}', reviewsHtml);
     html = html.replace('{{RELATED_PRODUCTS}}', relatedHtml);
-    html = html.replace('{{RELATED_ARTICLES}}', generateRelatedArticlesHtml(product, blogs));
+    html = html.replace('{{RELATED_ARTICLES}}', generateRelatedArticlesHtml(product, blogs, '../../'));
     html = html.replace('{{SOCIAL_SHARE}}', generateSocialShare(product));
     
     // Inline Critical CSS
     html = html.replace(/{{CRITICAL_CSS}}/g, `<style>${productCssContent}</style>`);
 
-    html = html.replace('{{FOOTER}}', generateFooter(products, siteConfig));
+    html = html.replace('{{FOOTER}}', generateFooter(products, siteConfig, '../../'));
 
     html = html.replace('{{SITE_CONFIG_JS}}', ''); // Remove placeholder, siteConfig is in site_data.js
 
     // Global Placeholders (Must be after Footer to catch placeholders in it)
-    html = replaceGlobalPlaceholders(html, siteConfig);
+    html = replaceGlobalPlaceholders(html, siteConfig, '../../');
 
     // Write File
     const dir = path.join(paths.product, slug);
@@ -1453,27 +1679,27 @@ let sitemapHtmlContent = `
     <div class="max-w-7xl mx-auto px-4 py-12">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Main Pages -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-cyan-300 hover:shadow-md transition-all group">
+            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all group">
                 <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                    <div class="p-2 bg-cyan-50 rounded-lg group-hover:bg-cyan-100 transition-colors">
-                        <i data-lucide="home" class="w-6 h-6 text-cyan-600"></i>
+                    <div class="p-2 bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                        <i data-lucide="home" class="w-6 h-6 text-emerald-600"></i>
                     </div>
                     Main Pages
                 </h2>
                 <div class="flex flex-col gap-4">
-                    <a href="/" class="text-slate-600 hover:text-cyan-600 transition-colors flex items-center gap-2 group/link">
-                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover/link:text-cyan-600 transition-colors"></i> 
+                    <a href="${getRelativeUrl('/', './')}" class="text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-2 group/link">
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover/link:text-emerald-600 transition-colors"></i> 
                         <span class="font-medium">Home Page</span>
                     </a>
-                    <a href="/${paths.blog}/" class="text-slate-600 hover:text-cyan-600 transition-colors flex items-center gap-2 group/link">
-                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover/link:text-cyan-600 transition-colors"></i> 
+                    <a href="${getRelativeUrl('/' + paths.blog + '/', './')}" class="text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-2 group/link">
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover/link:text-emerald-600 transition-colors"></i> 
                         <span class="font-medium">Our Blog</span>
                     </a>
                 </div>
             </div>
 
             <!-- Categories -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-cyan-300 hover:shadow-md transition-all group">
+            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all group">
                 <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                     <div class="p-2 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors">
                         <i data-lucide="layers" class="w-6 h-6 text-purple-600"></i>
@@ -1484,8 +1710,9 @@ let sitemapHtmlContent = `
                     ${categories.map(cat => {
                         if (!cat.slug) return '';
                         const slug = cat.slug;
+                        const catUrl = getRelativeUrl('/' + paths.category + '/' + slug + '/', './');
                         return `
-                        <a href="/${paths.category}/${slug}/" class="text-slate-600 hover:text-cyan-600 transition-colors flex items-center gap-2 group/link">
+                        <a href="${catUrl}" class="text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-2 group/link">
                             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover/link:text-purple-600 transition-colors"></i> 
                             <span class="font-medium">${cat.name}</span>
                         </a>`;
@@ -1494,7 +1721,7 @@ let sitemapHtmlContent = `
             </div>
 
             <!-- Blog Posts -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-cyan-300 hover:shadow-md transition-all group">
+            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all group">
                 <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                     <div class="p-2 bg-pink-50 rounded-lg group-hover:bg-pink-100 transition-colors">
                         <i data-lucide="book-open" class="w-6 h-6 text-pink-600"></i>
@@ -1502,12 +1729,14 @@ let sitemapHtmlContent = `
                     Blog Articles
                 </h2>
                 <div class="flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-                    ${blogs.map(post => `
-                        <a href="/${paths.blog}/${post.slug}/" class="text-slate-600 hover:text-cyan-600 transition-colors flex items-center gap-2 group/link">
+                    ${blogs.map(post => {
+                        const postUrl = getRelativeUrl('/' + paths.blog + '/' + post.slug + '/', './');
+                        return `
+                        <a href="${postUrl}" class="text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-2 group/link">
                             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover/link:text-pink-600 transition-colors"></i> 
                             <span class="text-sm font-medium line-clamp-1">${post.title}</span>
-                        </a>
-                    `).join('')}
+                        </a>`;
+                    }).join('')}
                 </div>
             </div>
 
@@ -1520,7 +1749,7 @@ let sitemapHtmlContent = `
                 const color = `hsl(${hue}, 70%, 40%)`;
                 
                 return `
-                    <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-cyan-300 hover:shadow-md transition-all group">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all group">
                         <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                             <div class="p-2 rounded-lg group-hover:opacity-80 transition-opacity" style="background-color: ${color}20">
                                 <i data-lucide="shopping-cart" class="w-6 h-6" style="color: ${color}"></i>
@@ -1528,12 +1757,14 @@ let sitemapHtmlContent = `
                             ${cat.name}
                         </h2>
                         <div class="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
-                              ${catProducts.map(p => `
-                                  <a href="/${paths.product}/${p.slug}/" class="text-slate-600 hover:text-cyan-600 transition-colors flex items-center gap-2 group/link">
+                              ${catProducts.map(p => {
+                                  const prodUrl = getRelativeUrl('/' + paths.product + '/' + p.slug + '/', './');
+                                  return `
+                                  <a href="${prodUrl}" class="text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-2 group/link">
                                       <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 transition-colors"></i>
                                       <span class="text-sm font-medium line-clamp-1">${p.display_title || p.title}</span>
-                                  </a>
-                              `).join('')}
+                                  </a>`;
+                              }).join('')}
                           </div>
                     </div>
                 `;
@@ -1544,17 +1775,21 @@ let sitemapHtmlContent = `
 
 let sitemapPageHtml = indexTemplate;
 sitemapPageHtml = sitemapPageHtml.replace('{{HEADER}}', generateFullHeader('./', products, categories, siteConfig));
-sitemapPageHtml = sitemapPageHtml.replace('{{HERO_TITLE}}', 'Site <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Map</span>');
+sitemapPageHtml = sitemapPageHtml.replace('{{HERO_TITLE}}', 'Site <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Map</span>');
 sitemapPageHtml = sitemapPageHtml.replace('{{HERO_SUBTITLE}}', 'Explore our complete directory of high-quality PVA accounts and digital services.');
 sitemapPageHtml = sitemapPageHtml.replace('{{PRODUCT_IMAGE_PRELOAD}}', '');
 sitemapPageHtml = sitemapPageHtml.replace('{{PRODUCT_GRID}}', sitemapHtmlContent);
+sitemapPageHtml = sitemapPageHtml.replace('{{SECTION_TITLE}}', 'Website Sitemap');
+sitemapPageHtml = sitemapPageHtml.replace('{{SECTION_SUBTITLE}}', `<span class="w-8 h-px bg-emerald-200"></span> Visual Directory`);
+sitemapPageHtml = sitemapPageHtml.replace(/homepage-only/g, 'hidden');
+sitemapPageHtml = sitemapPageHtml.replace('hidden sm:flex', 'hidden');
 sitemapPageHtml = sitemapPageHtml.replace('{{LATEST_ARTICLES}}', ''); // Clear latest articles section
-sitemapPageHtml = sitemapPageHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig));
+sitemapPageHtml = sitemapPageHtml.replace('{{FOOTER}}', generateFooter(products, siteConfig, './'));
 sitemapPageHtml = sitemapPageHtml.replace(/{{CRITICAL_CSS}}/g, `<style>${cssContent}</style>`);
-sitemapPageHtml = sitemapPageHtml.replace(/pvamarketplace – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | pvamarketplace');
+sitemapPageHtml = sitemapPageHtml.replace(/buysmmworld – Buy Verified Accounts & Reviews Instantly/g, 'Sitemap | buysmmworld');
 
 // Important: Replace all global placeholders in sitemap page too
-sitemapPageHtml = replaceGlobalPlaceholders(sitemapPageHtml, siteConfig);
+sitemapPageHtml = replaceGlobalPlaceholders(sitemapPageHtml, siteConfig, './');
 
 fs.writeFileSync('sitemap.html', minifyHTML(sitemapPageHtml));
 
@@ -1576,3 +1811,9 @@ console.log("robots.txt created.");
 
 
 console.log("Build Finished Successfully!");
+} // Close runBuild()
+
+startBuild().catch(err => {
+    console.error("Build failed:", err);
+    process.exit(1);
+});

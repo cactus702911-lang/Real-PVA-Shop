@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="favicon.png" sizes="any">
-    <title>Admin CMS - pvamarketplace</title>
+    <title>Admin CMS - buysmmworld</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Quill Rich Text Editor -->
@@ -93,7 +93,7 @@
             <div class="flex items-center gap-3">
                 <span class="bg-cyan-500/10 text-cyan-400 p-2 rounded-lg border border-cyan-500/20"><i data-lucide="layout-dashboard"></i></span>
                 <div>
-                    <h1 class="text-2xl font-bold text-white leading-tight">pvamarketplace CMS</h1>
+                    <h1 class="text-2xl font-bold text-white leading-tight">buysmmworld CMS</h1>
                     <div class="flex items-center gap-2 mt-0.5">
                         <span id="role-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 uppercase tracking-wider font-bold"></span>
                         <button onclick="logout()" class="text-slate-500 hover:text-red-400 text-xs flex items-center gap-1 transition-colors">
@@ -779,6 +779,18 @@
                         }
                     });
                 }
+
+                // Auto-generate slug for category from name
+                const catNameInput = document.getElementById('edit-cat-name');
+                if (catNameInput) {
+                    catNameInput.addEventListener('input', function() {
+                        const name = this.value;
+                        const slugInput = document.getElementById('edit-cat-slug');
+                        if (slugInput && (slugInput.value === '' || slugInput.value === 'new-category')) {
+                            slugInput.value = name.toLowerCase().trim().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+                        }
+                    });
+                }
             } catch (err) {
                 console.error("Login Success Error:", err);
                 alert("Error initializing CMS: " + err.message);
@@ -1368,7 +1380,7 @@
             
             // Auto-save currently open editors
             if(document.getElementById('product-editor') && !document.getElementById('product-editor').classList.contains('hidden')) await saveCurrentProduct(true);
-            if(document.getElementById('category-editor') && !document.getElementById('category-editor').classList.contains('hidden')) saveCurrentCategory(true);
+            if(document.getElementById('cat-editor') && !document.getElementById('cat-editor').classList.contains('hidden')) saveCurrentCategory(true);
             if(document.getElementById('blog-editor') && !document.getElementById('blog-editor').classList.contains('hidden')) saveCurrentBlog(true);
             if(document.getElementById('review-editor') && !document.getElementById('review-editor').classList.contains('hidden')) saveCurrentReview(true);
 

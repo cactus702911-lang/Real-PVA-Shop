@@ -48,10 +48,28 @@ while ($listener.IsListening) {
 
             Write-Host "Saved image: $filename" -ForegroundColor Green
 
+            # Auto-convert uploaded image to WebP if it's not already a .webp or .svg file
+            $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
+            $finalFilename = $filename
+            if ($ext -ne ".webp" -and $ext -ne ".svg") {
+                Write-Host "Converting uploaded image to WebP..." -ForegroundColor Yellow
+                $helperScript = Join-Path $root "convert_uploaded.js"
+                
+                # Execute node convert_uploaded.js "$filePath"
+                & node "$helperScript" "$filePath"
+                
+                if ($LASTEXITCODE -eq 0) {
+                    $finalFilename = [System.IO.Path]::GetFileNameWithoutExtension($filename) + ".webp"
+                    Write-Host "Successfully converted upload to WebP: $finalFilename" -ForegroundColor Green
+                } else {
+                    Write-Host "Failed to convert uploaded image to WebP (Exit Code: $LASTEXITCODE). Retaining original format." -ForegroundColor Red
+                }
+            }
+
             $response.StatusCode = 200
             $response.StatusDescription = "OK"
             # Return the relative path to be stored in the CMS (Must start with / for root-relative)
-            $bytesOut = [System.Text.Encoding]::UTF8.GetBytes("/images/products/$filename")
+            $bytesOut = [System.Text.Encoding]::UTF8.GetBytes("/images/products/$finalFilename")
             $response.OutputStream.Write($bytesOut, 0, $bytesOut.Length)
         } catch {
             Write-Host "Error uploading image: $_" -ForegroundColor Red

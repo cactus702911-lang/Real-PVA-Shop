@@ -16,7 +16,7 @@ RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 # The server just needs to serve files.
 
 # 4. Custom Error Pages
-ErrorDocument 404 /index.html
+ErrorDocument 404 /404.html
 
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css
