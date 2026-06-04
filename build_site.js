@@ -1166,15 +1166,15 @@ for (let i = 1; i <= totalPages; i++) {
     blogListHtml = blogListHtml.replace('{{CATEGORY_OPTIONS}}', categoryOptions);
 
     const pageTitleSuffix = i > 1 ? ` - Page ${i}` : '';
-    const blogTitle = `realpvashop Blog – Digital Marketing Tips${pageTitleSuffix}`;
-    const blogDesc = 'Unlock the secrets of digital marketing. Expert strategies, safety tips, and growth hacks for your business.';
+    const blogTitle = `Realpvashop Blog – PVA Accounts Tips &amp; Marketing Guides${pageTitleSuffix}`;
+    const blogDesc = 'Explore expert guides and safety tips on using phone-verified accounts (PVA), aged Gmails, Google Voice, and online reputation strategies to scale your marketing and protect your business.';
 
     // Enhanced Hero for Blog
     blogListHtml = blogListHtml.replace('<section class="hero-section-bg', '<section class="blog-hero-section-bg');
     blogListHtml = blogListHtml.replace('<div class="hero-overlay"></div>', '<div class="blog-hero-overlay"></div>');
     blogListHtml = blogListHtml.replace('{{HERO_TITLE}}', `
-        <span class="block text-emerald-400 text-lg font-bold tracking-widest uppercase mb-4">Our Blog</span>
-        <span class="text-white drop-shadow-sm">Latest Insights &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Guides</span></span>${pageTitleSuffix}
+        <span class="block text-emerald-400 text-lg font-bold tracking-widest uppercase mb-4">PVA &amp; Marketing Blog</span>
+        <span class="text-white drop-shadow-sm">Latest PVA Guides &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Growth Insights</span></span>${pageTitleSuffix}
     `);
     blogListHtml = blogListHtml.replace('{{HERO_SUBTITLE}}', blogDesc);
     blogListHtml = blogListHtml.replace('{{SECTION_TITLE}}', 'Latest Articles');
